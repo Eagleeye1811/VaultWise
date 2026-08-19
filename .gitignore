@@ -1,0 +1,45 @@
+# ── dependencies ──────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── build output ──────────────────────────────────────────────
+dist/
+dist-ssr/
+build/
+*.local
+
+# ── environment / secrets ─────────────────────────────────────
+# Never commit private keys, seed phrases, or RPC keys.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.json
+mnemonic.txt
+
+# ── logs ──────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── editors / OS ──────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── solidity tooling artefacts (future experiments) ───────────
+artifacts/
+cache/
+typechain/
+typechain-types/
