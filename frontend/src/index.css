@@ -73,7 +73,7 @@ code,
 
 .container {
   width: 100%;
-  max-width: 1040px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 28px 20px 56px;
   display: flex;
@@ -93,7 +93,7 @@ code,
 }
 
 .navbar-inner {
-  max-width: 1040px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 12px 20px;
   display: flex;
@@ -107,6 +107,9 @@ code,
   display: flex;
   align-items: center;
   gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  flex-shrink: 0;
 }
 
 .brand-mark {
@@ -601,10 +604,675 @@ code,
 /* ── footer ─────────────────────────────────────────────────────────────── */
 
 .footer {
-  text-align: center;
-  padding: 18px 20px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 22px 20px 30px;
+  margin-top: 8px;
+  border-top: 1px solid var(--ink-100);
   font-size: 0.78rem;
   color: var(--ink-500);
+}
+
+.footer-warn {
+  color: var(--amber-700);
+  background: var(--amber-050);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ *
+ * Experiment 3 — ERC-4626
+ *
+ * Everything below was added when the ERC-4626 vault landed. It reuses the
+ * colour and radius tokens defined at the top of this file, so the two
+ * experiments look like one product rather than two.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── brand + experiment switcher ────────────────────────────────────────── */
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.brand-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.experiment-switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--blue-050);
+  border: 1px solid var(--ink-100);
+  border-radius: 999px;
+}
+
+.switch-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px 7px 7px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-500);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.switch-tab:hover {
+  color: var(--ink-900);
+}
+
+.switch-tab.active {
+  background: var(--white);
+  color: var(--blue-700);
+  box-shadow: var(--shadow-sm);
+}
+
+.switch-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--ink-100);
+  color: var(--ink-500);
+}
+
+.switch-tab.active .switch-num {
+  background: var(--blue-600);
+  color: var(--white);
+}
+
+.wallet-pill .dot.ok {
+  background: var(--green-600);
+}
+
+/* ── hero ───────────────────────────────────────────────────────────────── */
+
+.hero-eyebrow {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--blue-100);
+  color: var(--blue-700);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero p {
+  max-width: 60ch;
+  margin-inline: auto;
+}
+
+/* The architecture strip under the Experiment 3 headline. */
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.flow-node {
+  padding: 7px 13px;
+  border: 1px solid var(--ink-100);
+  border-radius: 10px;
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-700);
+}
+
+.flow-node.accent {
+  border-color: var(--blue-500);
+  background: var(--blue-050);
+  color: var(--blue-700);
+}
+
+.flow-edge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--ink-500);
+}
+
+/* ── connect prompt ─────────────────────────────────────────────────────── */
+
+.connect-panel .empty {
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.connect-panel h2 {
+  color: var(--ink-900);
+  font-size: 1.05rem;
+}
+
+/* ── stats ──────────────────────────────────────────────────────────────── */
+
+.stats-grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.stat-card.accent {
+  background: linear-gradient(160deg, var(--blue-100), var(--blue-050));
+  border: 1px solid var(--blue-100);
+}
+
+.stat-unit {
+  margin-left: 5px;
+  font-size: 0.72em;
+  font-weight: 600;
+  color: var(--ink-500);
+}
+
+.skeleton.wide {
+  width: 60%;
+}
+
+/* ── vault profile card (the VaultWise-specific feature) ────────────────── */
+
+.profile-card {
+  border-left: 3px solid var(--blue-500);
+}
+
+.profile-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.profile-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+}
+
+.profile-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.tag {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--blue-100);
+  color: var(--blue-700);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.tag-muted {
+  background: var(--ink-100);
+  color: var(--ink-500);
+}
+
+.profile-flow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--blue-050);
+  border: 1px solid var(--ink-100);
+}
+
+.flow-token {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-700);
+}
+
+.flow-token.flow-share {
+  color: var(--blue-700);
+}
+
+.flow-arrow {
+  color: var(--ink-300);
+}
+
+.profile-risk {
+  margin: 14px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--amber-050);
+  color: var(--amber-700);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.profile-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kv-tight {
+  padding-top: 14px;
+  border-top: 1px solid var(--ink-100);
+}
+
+.kv dd a {
+  color: var(--blue-600);
+  text-decoration: none;
+}
+
+.kv dd a:hover {
+  text-decoration: underline;
+}
+
+.kv dd.emphasis {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--blue-700);
+}
+
+.dd-note {
+  display: block;
+  margin-top: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  color: var(--ink-500);
+}
+
+/* ── test-token faucet ──────────────────────────────────────────────────── */
+
+.faucet {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ink-100);
+}
+
+.faucet-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.faucet-title {
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-500);
+}
+
+.faucet-sub {
+  font-size: 0.8rem;
+  color: var(--ink-500);
+}
+
+.faucet-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.faucet-row .input-wrap {
+  flex: 1;
+}
+
+/* ── tabs (deposit/mint, withdraw/redeem) ───────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 14px;
+  background: var(--blue-050);
+  border-radius: 10px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-500);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover:not(:disabled) {
+  color: var(--ink-900);
+}
+
+.tab.active {
+  background: var(--white);
+  color: var(--blue-700);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ── amount field extras ────────────────────────────────────────────────── */
+
+.field-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.field-hint {
+  font-size: 0.74rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-500);
+}
+
+/* ── live preview line (previewDeposit / previewWithdraw / …) ───────────── */
+
+.preview-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--blue-050);
+  border: 1px dashed var(--blue-100);
+  min-height: 44px;
+}
+
+.preview-label {
+  font-size: 0.78rem;
+  color: var(--ink-500);
+}
+
+.preview-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--blue-700);
+}
+
+.preview-src {
+  margin-left: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  color: var(--ink-500);
+}
+
+.preview-idle {
+  font-size: 0.8rem;
+  color: var(--ink-500);
+}
+
+/* ── two-step approve → deposit ─────────────────────────────────────────── */
+
+.step-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--ink-100);
+  color: var(--ink-500);
+}
+
+.step-num.active {
+  background: var(--blue-600);
+  color: var(--white);
+}
+
+.step-num.done {
+  background: var(--green-050);
+  color: var(--green-600);
+}
+
+.allowance-note {
+  font-size: 0.76rem;
+  color: var(--ink-500);
+}
+
+/* ── conversion calculator ──────────────────────────────────────────────── */
+
+.convert-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.convert-row {
+  padding: 14px;
+  border: 1px solid var(--ink-100);
+  border-radius: 12px;
+  background: var(--blue-050);
+}
+
+.convert-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.convert-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-700);
+}
+
+.convert-call {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  color: var(--ink-500);
+}
+
+.convert-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.convert-body .input-wrap {
+  flex: 1;
+  background: var(--white);
+}
+
+.convert-arrow {
+  color: var(--ink-300);
+  font-size: 1.1rem;
+}
+
+.convert-result {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--white);
+  border: 1px solid var(--ink-100);
+  overflow: hidden;
+}
+
+.convert-result-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--blue-700);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.convert-result-unit {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-500);
+}
+
+/* ── transaction steps + decoded event log ──────────────────────────────── */
+
+.tx-steps {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.tx-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-300);
+}
+
+.tx-step-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-300);
+}
+
+.tx-step.active {
+  color: var(--blue-700);
+}
+
+.tx-step.active .tx-step-dot {
+  background: var(--blue-600);
+  box-shadow: 0 0 0 3px var(--blue-100);
+}
+
+.tx-step.done {
+  color: var(--green-600);
+}
+
+.tx-step.done .tx-step-dot {
+  background: var(--green-600);
+}
+
+.event-log {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ink-100);
+}
+
+.event-log-title {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-500);
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.event-item {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--white);
+  border: 1px solid var(--ink-100);
+}
+
+.event-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.event-badge.erc20 {
+  background: var(--ink-100);
+  color: var(--ink-700);
+}
+
+.event-badge.erc4626 {
+  background: var(--blue-100);
+  color: var(--blue-700);
+}
+
+.event-sig {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.event-args {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  color: var(--ink-500);
+  word-break: break-word;
+}
+
+/* ── wide two-panel row ─────────────────────────────────────────────────── */
+
+.cards-grid-wide {
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
 }
 
 /* ── small screens ──────────────────────────────────────────────────────── */
@@ -619,5 +1287,29 @@ code,
   .empty {
     flex-direction: column;
     align-items: stretch;
+  }
+  .navbar-inner {
+    justify-content: center;
+  }
+  .experiment-switch {
+    order: 3;
+    width: 100%;
+  }
+  .switch-tab {
+    flex: 1;
+    justify-content: center;
+  }
+  .step-actions {
+    grid-template-columns: 1fr;
+  }
+  .convert-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .convert-arrow {
+    text-align: center;
+  }
+  .cards-grid-wide {
+    grid-template-columns: 1fr;
   }
 }

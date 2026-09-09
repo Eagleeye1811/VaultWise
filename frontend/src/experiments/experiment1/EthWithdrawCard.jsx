@@ -1,15 +1,28 @@
 import { useState } from "react";
 
 /**
- * Deposit card.
+ * Withdraw card.
  *
- * Input-level validation happens here (empty / not a number / <= 0 /
- * more ETH than the wallet holds). The actual signed transaction is done by
- * App.jsx via `onDeposit(amount)`.
+ * Validates the amount against the user's *vault* balance before ever asking
+ * MetaMask to sign — that saves the user a guaranteed-to-revert transaction.
+ * The contract enforces the same rule on-chain.
  */
-export default function DepositCard({ onDeposit, walletBalance, disabled, pending }) {
+export default function EthWithdrawCard({
+  onWithdraw,
+  myVaultBalance, // rounded, for display
+  myVaultExact, // full-precision, for Max + validation
+  disabled,
+  pending,
+}) {
   const [amount, setAmount] = useState("");
   const [localError, setLocalError] = useState("");
+
+  // Max fills the *exact* balance — the displayed 4-decimal value can round up
+  // and would then be rejected by the contract.
+  const handleMax = () => {
+    setLocalError("");
+    setAmount(myVaultExact);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -17,7 +30,7 @@ export default function DepositCard({ onDeposit, walletBalance, disabled, pendin
 
     const trimmed = amount.trim();
     if (trimmed === "") {
-      setLocalError("Enter an amount to deposit.");
+      setLocalError("Enter an amount to withdraw.");
       return;
     }
 
@@ -27,24 +40,26 @@ export default function DepositCard({ onDeposit, walletBalance, disabled, pendin
       return;
     }
     if (value <= 0) {
-      setLocalError("Deposit must be greater than 0 ETH.");
+      setLocalError("Withdrawal must be greater than 0 ETH.");
       return;
     }
-    if (Number(walletBalance) === 0 || value > Number(walletBalance)) {
-      setLocalError("You do not have that much ETH in your wallet.");
+    if (value > Number(myVaultExact)) {
+      setLocalError(`You only have ${myVaultBalance} ETH in the vault.`);
       return;
     }
 
-    const ok = await onDeposit(trimmed);
+    const ok = await onWithdraw(trimmed);
     if (ok) setAmount("");
   };
 
   return (
     <section className="panel card">
       <div className="panel-head">
-        <h2>Deposit ETH</h2>
+        <h2>Withdraw ETH</h2>
       </div>
-      <p className="card-sub">Move ETH from your wallet into the VaultWise vault.</p>
+      <p className="card-sub">
+        Take your ETH back out. Available: <strong>{myVaultBalance} ETH</strong>
+      </p>
 
       <form onSubmit={handleSubmit} className="form">
         <label className="field">
@@ -59,20 +74,28 @@ export default function DepositCard({ onDeposit, walletBalance, disabled, pendin
               disabled={disabled || pending}
             />
             <span className="input-suffix">ETH</span>
+            <button
+              type="button"
+              className="btn-max"
+              onClick={handleMax}
+              disabled={disabled || pending}
+            >
+              Max
+            </button>
           </div>
         </label>
 
         <button
           type="submit"
-          className="btn btn-primary btn-block"
+          className="btn btn-outline btn-block"
           disabled={disabled || pending}
         >
           {pending ? (
             <>
-              <span className="spinner" aria-hidden="true" /> Depositing...
+              <span className="spinner dark" aria-hidden="true" /> Withdrawing...
             </>
           ) : (
-            "Deposit"
+            "Withdraw"
           )}
         </button>
       </form>

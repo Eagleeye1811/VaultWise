@@ -18,13 +18,53 @@ const CODE_MESSAGES = {
   "-32002": "MetaMask already has a pending request. Open MetaMask and finish it.",
 };
 
-/** Revert strings coming from VaultWiseVault.sol, mapped to friendlier text. */
+/**
+ * Revert strings and custom-error names, mapped to friendlier text.
+ *
+ * Experiment 1's contract used `require(..., "string")`, so its reverts arrive
+ * as revert strings. Experiment 3 inherits OpenZeppelin v5, which uses custom
+ * errors instead — they arrive as a name like `ERC20InsufficientAllowance`.
+ * Both forms end up somewhere in the error message, so one list covers them.
+ */
 const REVERT_MESSAGES = [
+  // ── Experiment 1 — plain ETH vault ────────────────────────────────
   ["Deposit amount must be greater than zero", "Deposit must be greater than 0 ETH."],
   ["Withdraw amount must be greater than zero", "Withdrawal must be greater than 0 ETH."],
   ["Insufficient vault balance", "You cannot withdraw more than you deposited."],
   ["ETH transfer failed", "The vault could not send the ETH back. Please try again."],
   ["Use deposit() to add ETH", "Send ETH using the Deposit card, not a plain transfer."],
+
+  // ── Experiment 3 — OpenZeppelin ERC-20 custom errors ──────────────
+  [
+    "ERC20InsufficientAllowance",
+    "The vault is not approved to move that many tokens yet. Run Approve first, for at least the amount you are depositing.",
+  ],
+  ["ERC20InsufficientBalance", "You do not have that many tokens in your wallet."],
+  ["ERC20InvalidReceiver", "That recipient address is not valid."],
+  ["ERC20InvalidSender", "That sender address is not valid."],
+  ["ERC20InvalidApprover", "That approver address is not valid."],
+  ["ERC20InvalidSpender", "That spender address is not valid."],
+
+  // ── Experiment 3 — OpenZeppelin ERC-4626 custom errors ────────────
+  [
+    "ERC4626ExceededMaxDeposit",
+    "That deposit is larger than the vault currently accepts.",
+  ],
+  ["ERC4626ExceededMaxMint", "That is more shares than the vault can mint right now."],
+  [
+    "ERC4626ExceededMaxWithdraw",
+    "You cannot withdraw that much — it is more than your shares are worth.",
+  ],
+  [
+    "ERC4626ExceededMaxRedeem",
+    "You cannot redeem that many shares — it is more than you hold.",
+  ],
+
+  // ── Experiment 3 — MockUSDC access control ────────────────────────
+  [
+    "OwnableUnauthorizedAccount",
+    "Only the wallet that deployed MockUSDC can mint test tokens. Switch to the deployer account, or ask it to mint some for you.",
+  ],
 ];
 
 /**
@@ -64,6 +104,8 @@ export function friendlyError(error, fallback = "Something went wrong. Please tr
     return "Not enough ETH in your wallet to cover the amount plus gas.";
   if (/could not decode result|BAD_DATA|missing revert data/i.test(haystack))
     return "Could not read the contract. Check the contract address and that you are on Sepolia.";
+  if (/transfer amount exceeds allowance|insufficient allowance/i.test(haystack))
+    return "The vault is not approved to move that many tokens yet. Run Approve first.";
 
   // 4. `error.reason` is usually a clean one-liner already; otherwise fall back.
   return error.reason || fallback;

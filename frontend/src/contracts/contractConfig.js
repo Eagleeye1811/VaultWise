@@ -2,106 +2,113 @@
  * VaultWise — contract configuration
  * ==================================
  *
- * This is the ONLY file in the frontend that knows the deployed contract
- * address and its ABI. Components never hardcode either one.
+ * The single place the frontend learns *what is deployed where*. No component
+ * hardcodes an address or an ABI; they all import from here.
+ *
+ * ABIs are NOT written by hand. They are generated from the Hardhat
+ * compilation artifacts into `abis.generated.js`:
+ *
+ *     npx hardhat compile      (from the repository root)
+ *     npm run sync-abi
+ *
+ * so the ABI the browser uses always matches the bytecode that was compiled
+ * from `contracts/`.
  *
  * ────────────────────────────────────────────────────────────────────────
- * AFTER YOU DEPLOY `contracts/VaultWiseVault.sol` IN REMIX:
+ * ADDRESSES
  *
- *   1. In Remix, open the "Deployed Contracts" panel (bottom left).
- *   2. Click the copy icon next to `VAULTWISEVAULT AT 0x...`.
- *   3. Paste that address below as CONTRACT_ADDRESS — OR, better, put it in
- *      `frontend/.env.local` as:
+ * Set these in `frontend/.env.local` (git-ignored) after deploying:
  *
- *          VITE_CONTRACT_ADDRESS=0xYourDeployedAddressHere
+ *     VITE_CONTRACT_ADDRESS=0x...   Experiment 1 — the plain ETH vault
+ *     VITE_USDC_ADDRESS=0x...       Experiment 3 — MockUSDC (ERC-20 asset)
+ *     VITE_VAULT4626_ADDRESS=0x...  Experiment 3 — VaultWiseVault (ERC-4626)
  *
- *      (the env value wins if it is set, so you don't have to edit code).
+ * Deploy them with either:
+ *     npx hardhat run scripts/deployExperiment3.js --network sepolia
+ * or by hand in Remix — see the README.
  *
- *   The ABI below was written by hand to exactly match VaultWiseVault.sol,
- *   so you normally do NOT need to touch it. If you ever change the .sol
- *   file, regenerate it in Remix:
- *      Solidity Compiler tab → compile → "ABI" copy button at the bottom
- *      → paste the copied JSON array as the value of CONTRACT_ABI below.
+ * Restart `npm run dev` after editing an env file; Vite only reads them at
+ * startup.
  * ────────────────────────────────────────────────────────────────────────
  */
 
-/** Deployed VaultWiseVault address. Replace after deploying via Remix. */
-export const CONTRACT_ADDRESS =
-  import.meta.env.VITE_CONTRACT_ADDRESS || "PASTE_YOUR_DEPLOYED_ADDRESS_HERE";
+import { ETH_VAULT_ABI, MOCK_USDC_ABI, VAULT_4626_ABI } from "./abis.generated";
 
-/** ABI of VaultWiseVault.sol (human-readable-free, standard JSON ABI). */
-export const CONTRACT_ABI = [
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "address", name: "user", type: "address" },
-      { indexed: false, internalType: "uint256", name: "amount", type: "uint256" },
-    ],
-    name: "Deposited",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      { indexed: true, internalType: "address", name: "user", type: "address" },
-      { indexed: false, internalType: "uint256", name: "amount", type: "uint256" },
-    ],
-    name: "Withdrawn",
-    type: "event",
-  },
-  {
-    inputs: [],
-    name: "deposit",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
-    name: "withdraw",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "", type: "address" }],
-    name: "deposits",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "totalDeposits",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "getMyDeposit",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "getVaultBalance",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  { stateMutability: "payable", type: "receive" },
-  { stateMutability: "payable", type: "fallback" },
-];
+/** Accepts a value only if it really looks like an address. */
+const readAddress = (value) => (/^0x[a-fA-F0-9]{40}$/.test(value ?? "") ? value : "");
 
-/** Target network for this experiment: Sepolia testnet (chain id 11155111). */
+/* ------------------------------------------------------------------ *
+ * Network
+ * ------------------------------------------------------------------ */
+
+/** Target network for every VaultWise experiment: Sepolia (chain id 11155111). */
 export const TARGET_CHAIN_ID = 11155111n;
 export const TARGET_NETWORK_NAME = "Sepolia Testnet";
 
-/** Block explorer used for transaction links. */
+/** Block explorer links. */
 export const EXPLORER_TX_BASE_URL = "https://sepolia.etherscan.io/tx/";
+export const EXPLORER_ADDRESS_BASE_URL = "https://sepolia.etherscan.io/address/";
 
-/** True once a real address has been pasted in (or provided via .env.local). */
-export const isContractConfigured =
-  /^0x[a-fA-F0-9]{40}$/.test(CONTRACT_ADDRESS);
+/* ------------------------------------------------------------------ *
+ * Experiment 1 — plain ETH vault
+ * ------------------------------------------------------------------ */
+
+export const ETH_VAULT_ADDRESS = readAddress(import.meta.env.VITE_CONTRACT_ADDRESS);
+export { ETH_VAULT_ABI };
+
+export const isEthVaultConfigured = ETH_VAULT_ADDRESS !== "";
+
+/* ------------------------------------------------------------------ *
+ * Experiment 3 — ERC-20 asset + ERC-4626 tokenized vault
+ * ------------------------------------------------------------------ */
+
+/** MockUSDC, the ERC-20 token the vault is denominated in. */
+export const USDC_ADDRESS = readAddress(import.meta.env.VITE_USDC_ADDRESS);
+
+/** VaultWiseVault, the ERC-4626 vault that issues vwUSDC shares. */
+export const VAULT_4626_ADDRESS = readAddress(import.meta.env.VITE_VAULT4626_ADDRESS);
+
+export { MOCK_USDC_ABI, VAULT_4626_ABI };
+
+/** Experiment 3 needs BOTH contracts — a vault with no asset is unusable. */
+export const isErc4626Configured = USDC_ADDRESS !== "" && VAULT_4626_ADDRESS !== "";
+
+/* ------------------------------------------------------------------ *
+ * Experiment registry — drives the navbar switcher and the router
+ * ------------------------------------------------------------------ */
+
+export const EXPERIMENTS = [
+  {
+    id: "experiment-3",
+    number: 3,
+    slug: "experiment-3",
+    title: "ERC-4626 Tokenized Vault",
+    short: "ERC-4626 Vault",
+    blurb: "Deposit MockUSDC, receive transferable vwUSDC vault shares.",
+    configured: isErc4626Configured,
+  },
+  {
+    id: "experiment-1",
+    number: 1,
+    slug: "experiment-1",
+    title: "React + Ethers.js ETH Vault",
+    short: "ETH Vault",
+    blurb: "The original plain-ETH vault that started VaultWise.",
+    configured: isEthVaultConfigured,
+  },
+];
+
+/** The experiment shown when the URL has no (or an unknown) hash. */
+export const DEFAULT_EXPERIMENT = "experiment-3";
+
+/* ------------------------------------------------------------------ *
+ * Backwards compatibility
+ *
+ * Experiment 1 shipped with `CONTRACT_ADDRESS` / `CONTRACT_ABI` /
+ * `isContractConfigured`. They are kept as aliases so nothing that still
+ * imports the old names breaks.
+ * ------------------------------------------------------------------ */
+
+export const CONTRACT_ADDRESS = ETH_VAULT_ADDRESS;
+export const CONTRACT_ABI = ETH_VAULT_ABI;
+export const isContractConfigured = isEthVaultConfigured;

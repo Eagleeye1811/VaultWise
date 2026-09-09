@@ -1,20 +1,12 @@
-/**
- * The three headline numbers of the dashboard.
- * Values arrive already formatted as ETH strings (formatEther in App.jsx).
- */
-function StatCard({ label, value, hint, loading }) {
-  return (
-    <div className="stat-card">
-      <span className="stat-label">{label}</span>
-      <span className="stat-value">
-        {loading ? <span className="skeleton" /> : `${value} ETH`}
-      </span>
-      <span className="stat-hint">{hint}</span>
-    </div>
-  );
-}
+import StatCard from "../../components/StatCard";
 
-export default function VaultStats({
+/**
+ * Experiment 1's three headline numbers.
+ *
+ * Values arrive already formatted as ETH strings — Experiment 1's vault is
+ * denominated in native ETH, so 18 decimals throughout.
+ */
+export default function EthVaultStats({
   walletBalance,
   myVaultBalance,
   totalVaultBalance,
@@ -25,27 +17,29 @@ export default function VaultStats({
     <section className="panel">
       <div className="panel-head">
         <h2>Vault Statistics</h2>
-        {connected && (
-          <span className="panel-note">Read directly from the blockchain</span>
-        )}
+        {connected && <span className="panel-note">Read directly from the blockchain</span>}
       </div>
 
       <div className="stats-grid">
         <StatCard
           label="Wallet Balance"
           value={walletBalance}
+          unit="ETH"
           hint="ETH held in your MetaMask account"
           loading={loading}
         />
         <StatCard
           label="My Vault Balance"
           value={myVaultBalance}
+          unit="ETH"
           hint="ETH you have deposited into VaultWise"
           loading={loading}
+          accent
         />
         <StatCard
           label="Total Vault"
           value={totalVaultBalance}
+          unit="ETH"
           hint="ETH held by the VaultWise contract"
           loading={loading}
         />

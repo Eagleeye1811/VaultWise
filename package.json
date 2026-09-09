@@ -1,0 +1,29 @@
+{
+  "name": "vaultwise-contracts",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "VaultWise smart contracts \u2014 Hardhat workspace for compiling, testing and deploying the Experiment 1 ETH vault and the Experiment 3 ERC-4626 vault.",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "clean": "hardhat clean",
+    "sync-abi": "node scripts/syncAbi.js",
+    "demo": "hardhat run scripts/experiment3Lifecycle.js",
+    "deploy:sepolia": "hardhat run scripts/deployExperiment3.js --network sepolia",
+    "verify:sepolia": "node scripts/verifyDeployment.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.15",
+    "@nomicfoundation/hardhat-ethers-chai-matchers": "^3.0.11",
+    "@nomicfoundation/hardhat-ignition": "^3.1.8",
+    "@nomicfoundation/hardhat-mocha": "^3.1.0",
+    "@nomicfoundation/hardhat-network-helpers": "^3.0.11",
+    "@nomicfoundation/hardhat-verify": "^3.1.0",
+    "ethers": "^6.17.0",
+    "hardhat": "^3.16.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1"
+  }
+}

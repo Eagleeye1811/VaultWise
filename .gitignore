@@ -38,8 +38,16 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
-# ── solidity tooling artefacts (future experiments) ───────────
+# ── solidity tooling artefacts (Hardhat) ──────────────────────
 artifacts/
 cache/
 typechain/
 typechain-types/
+.hardhat/
+
+# ── deployment records ────────────────────────────────────────
+# Real testnet deployments (deployments/sepolia.json) ARE committed — they are
+# the record of what is live. Throwaway in-process runs are not.
+deployments/default.json
+deployments/localhost.json
+deployments/hardhat.json
