@@ -1,0 +1,47 @@
+{
+  "experiment": 6,
+  "network": "sepolia",
+  "chainId": 11155111,
+  "status": "complete",
+  "deployedAt": "2026-10-19",
+  "deployer": "0xcd1a6B2f01fEddF7520C0Eb3306027a2c6c4c730",
+  "note": "Recovered: the first Sepolia run deployed the three tokens (nonces 62-64), then stopped at Factory (gas estimate exceeded the balance at 1 gwei) before writing a record. Re-run deploy:exp6:sepolia to resume.",
+  "contracts": {
+    "TokenA": {
+      "address": "0xEE5090e062015fADBE15d9dBE213c10112AC701e",
+      "txHash": "0xd8b85f8fa3fcd58d896867d145ad7054483159bc60b4fc561f7b1977ba81faf3",
+      "name": "Token A",
+      "symbol": "DXA"
+    },
+    "TokenB": {
+      "address": "0x19CBfe5efEfa8Ab20A0AD5FA9F0CA7E9b6E85633",
+      "txHash": "0x90a9eea0c6d2bb3d697f5b493a7b1a1b12d2ec9d99745320c3ff36ba96db0275",
+      "name": "Token B",
+      "symbol": "DXB"
+    },
+    "TokenC": {
+      "address": "0xa30B7353F1869B20ED7eCF05586C1F35722952B9",
+      "txHash": "0x99eac8af52b03c52c1261a493d07e35bc2d4656599daeb06ca436527a8b45dff",
+      "name": "Token C",
+      "symbol": "DXC"
+    },
+    "Factory": {
+      "address": "0x5b61081462e34e008B4D863Dd65506dd7863cC08",
+      "txHash": "0x211d9b24f3072dee341da2e26faed44db6132faab93c1bdb5e781e2ea6468b2e"
+    },
+    "Router": {
+      "address": "0x24024e2590c0d1c41fb0b7b960e6a8Ca43B32658",
+      "txHash": "0x714ec158cadf4753d2b6c1375640eaed36823ba26806924bb7f0cbf24e2f2189",
+      "factory": "0x5b61081462e34e008B4D863Dd65506dd7863cC08"
+    }
+  },
+  "mint": {
+    "to": "0xcd1a6B2f01fEddF7520C0Eb3306027a2c6c4c730",
+    "wholeTokensEach": "10000",
+    "txHashes": {
+      "DXA": "0x4462af22049321beffc09bdecb67e7527b2df1948e474d13d49cba18130be291",
+      "DXB": "0xb4d0944b0b65fccd14141041b130c09737f8197b380cbbde72140a30b45e76df",
+      "DXC": "0xe4b88e578d6c0bb056e06dc8f59ed8395b14cf294913a9aac3b7197a7a4cc813"
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "experiment": 5,
+  "network": "sepolia",
+  "chainId": 11155111,
+  "status": "complete",
+  "note": "First run stopped at step 8 (mint 100 ABC) with 'in-flight transaction limit reached for delegated accounts'; that mint was never sent (deployer nonce 59 unused). LPT and ABC entries were recovered on-chain (CREATE address per nonce + bytecode + deploy receipt) because the terminal output was garbled.",
+  "deployer": "0xcd1a6B2f01fEddF7520C0Eb3306027a2c6c4c730",
+  "rewardRate": "1e15 RWD base units per whole staked token per second (0.001 RWD)",
+  "yieldFarming": {
+    "LPT": {
+      "address": "0xEd305BEcD7fFc199Da9883E2a8d56f71fE01aDA6",
+      "txHash": "0x1b263cd934017f9b67f9754b5ef694030f83f1a3cd6758932f4c069e8d97ca3c",
+      "name": "LP Token",
+      "symbol": "LPT"
+    },
+    "RWD": {
+      "address": "0x46FD1d37F0dd37E03443A6Bc8B36d34e78304443",
+      "txHash": "0x4dbd5430f2c4795850cd894239a01794524dd019f702e1c0cd5894372e0922f8",
+      "name": "Reward Token",
+      "symbol": "RWD"
+    },
+    "mintLptTx": "0xc3618510f1229949d285ae35ab9a2094f9fa5e49874bde45c0c30327a21df05b",
+    "SimpleYieldFarm": {
+      "address": "0xcE26f526B5Dd6F0b2DEE9eE8575B224967b22B30",
+      "txHash": "0x883ab578e01c2c10ffe2709734d5621880d72c588bcf5c54c21270b7c3bbc7ad",
+      "stakingToken": "0xEd305BEcD7fFc199Da9883E2a8d56f71fE01aDA6",
+      "rewardToken": "0x46FD1d37F0dd37E03443A6Bc8B36d34e78304443"
+    },
+    "fundRwdTx": "0x3ca4c64e31826eae633160730e5f57dd9f352469cbaf063fd93da37944b60eb7"
+  },
+  "staking": {
+    "ABC": {
+      "address": "0x36ee3668B13Efe258C1AC229C0A043c806B99683",
+      "txHash": "0x47f70a40591b32b3a004e00e9db95ea7120bacbe3aea2e0f2dd6c166860bbac7",
+      "name": "Protocol Token",
+      "symbol": "ABC"
+    },
+    "RWD": {
+      "address": "0xd47c4EA94928546815919a2B1D67F363A4BF3182",
+      "txHash": "0xc8966bc275eda3b78405228fe5d05c046104d7bafd930ea431cd661009e09855",
+      "name": "Reward Token",
+      "symbol": "RWD"
+    },
+    "mintAbcTx": "0xe0db07b9ce98d14976895f298a1e252e89dea7782cadacd1aa13b6473d136b44",
+    "SimpleStaking": {
+      "address": "0x7e2aB3fd700a00bcF9E8CD8285b0934580454359",
+      "txHash": "0x1ff584f78ae95c98e9d98285d81bb60a9b407f6569ee24918b8a31bd034f6ced",
+      "stakingToken": "0x36ee3668B13Efe258C1AC229C0A043c806B99683",
+      "rewardToken": "0xd47c4EA94928546815919a2B1D67F363A4BF3182"
+    },
+    "fundRwdTx": "0xea5f6b08b9190b6775b6caf08d4f7bc2294682e06e5dd593975e434b05cab08e"
+  },
+  "completedAt": "2026-10-18T20:30:11.006Z"
+}

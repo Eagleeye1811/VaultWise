@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { network } from "hardhat";
 
+import { deployConfirmed, sendConfirmed } from "./lib/txSafety.js";
+
 /**
  * VaultWise — Experiment 5 deployment script (yield farming + staking).
  *
@@ -38,8 +40,15 @@ import { network } from "hardhat";
  *   npx hardhat keystore set SEPOLIA_RPC_URL
  *   npx hardhat keystore set SEPOLIA_PRIVATE_KEY
  *
- * The deployment record goes to deployments/<network>-experiment5.json. An
- * existing record is never overwritten — a timestamped file is written instead.
+ * The deployment record goes to deployments/<network>-experiment5.json and is
+ * saved after EVERY confirmed step (status "partial" until the end), so an
+ * interrupted run can be completed with scripts/resumeExperiment5.js. An
+ * existing record is never overwritten — a timestamped file is used instead.
+ *
+ * Transactions are sent strictly one at a time (scripts/lib/txSafety.js):
+ * no pending tx → send → receipt status 1 → idle again. This matters on
+ * Sepolia for EIP-7702 delegated accounts, which nodes limit to one in-flight
+ * transaction.
  */
 
 const STAKE_WHOLE_TOKENS = 100n;
@@ -66,16 +75,43 @@ if (balance === 0n) {
 }
 
 const MockERC20 = await ethers.getContractFactory("MockERC20");
+const ctx = { provider: ethers.provider, from: deployer.address };
 let stepNumber = 0;
+
+// ---------------------------------------------------------------------------
+// Record — chosen up front and saved after every step
+// ---------------------------------------------------------------------------
+mkdirSync("deployments", { recursive: true });
+let recordPath = `deployments/${networkName}-experiment5.json`;
+if (existsSync(recordPath) && networkName !== "default") {
+  recordPath = `deployments/${networkName}-experiment5-${Date.now()}.json`;
+  console.log(`\nAn earlier Experiment 5 record exists; keeping it and writing ${recordPath} instead.`);
+}
+const record = {
+  experiment: 5,
+  network: networkName,
+  chainId: Number(chainId),
+  status: "partial",
+  deployedAt: new Date().toISOString(),
+  deployer: deployer.address,
+  rewardRate: "1e15 RWD base units per whole staked token per second (0.001 RWD)",
+  yieldFarming: {},
+  staking: {},
+};
+const save = () => writeFileSync(recordPath, `${JSON.stringify(record, null, 2)}\n`);
+const tokenEntry = ({ address, txHash, name, symbol }) => ({ address, txHash, name, symbol });
 
 /** Deploy one MockERC20 and print its details. */
 async function deployToken(name, symbol) {
   stepNumber += 1;
   console.log(`\n[${stepNumber}/${TOTAL_STEPS}] Deploying MockERC20("${name}", "${symbol}") ...`);
-  const token = await MockERC20.deploy(name, symbol);
-  await token.waitForDeployment();
-  const address = await token.getAddress();
-  const txHash = token.deploymentTransaction().hash;
+  const { contract: token, address, txHash } = await deployConfirmed({
+    label: `deploy ${symbol}`,
+    factory: MockERC20,
+    args: [name, symbol],
+    getCreateAddress: ethers.getCreateAddress,
+    ...ctx,
+  });
   console.log(`      address : ${address}`);
   console.log(`      tx hash : ${txHash}`);
   return { token, address, txHash, name, symbol };
@@ -86,8 +122,7 @@ async function mintChecked(label, { token, symbol }, to, whole) {
   stepNumber += 1;
   console.log(`\n[${stepNumber}/${TOTAL_STEPS}] Minting ${whole} ${symbol} to ${label} ...`);
   const before = await token.balanceOf(to);
-  const tx = await token.mint(to, T(whole));
-  await tx.wait();
+  const { tx } = await sendConfirmed({ label: `mint ${symbol}`, ...ctx, send: () => token.mint(to, T(whole)) });
   const after = await token.balanceOf(to);
   if (after - before !== T(whole)) throw new Error(`${symbol} mint verification failed: got ${after - before}`);
   console.log(`      tx hash : ${tx.hash}  -> ${label} holds ${ethers.formatUnits(after, 18)} ${symbol}`);
@@ -100,11 +135,13 @@ async function deployPool(contractName, stakeToken, rewardToken) {
   console.log(
     `\n[${stepNumber}/${TOTAL_STEPS}] Deploying ${contractName}(${stakeToken.symbol}, ${rewardToken.symbol}) ...`
   );
-  const Pool = await ethers.getContractFactory(contractName);
-  const pool = await Pool.deploy(stakeToken.address, rewardToken.address);
-  await pool.waitForDeployment();
-  const address = await pool.getAddress();
-  const txHash = pool.deploymentTransaction().hash;
+  const { contract: pool, address, txHash } = await deployConfirmed({
+    label: `deploy ${contractName}`,
+    factory: await ethers.getContractFactory(contractName),
+    args: [stakeToken.address, rewardToken.address],
+    getCreateAddress: ethers.getCreateAddress,
+    ...ctx,
+  });
   console.log(`      address : ${address}`);
   console.log(`      tx hash : ${txHash}`);
 
@@ -128,58 +165,44 @@ async function deployPool(contractName, stakeToken, rewardToken) {
 // Part 1 — Yield farming
 // ---------------------------------------------------------------------------
 console.log("\n── Part 1 — Yield farming ──────────────────────────────────");
+const yf = record.yieldFarming;
 const lpt = await deployToken("LP Token", "LPT");
+yf.LPT = tokenEntry(lpt);
+save();
 const farmRwd = await deployToken("Reward Token", "RWD");
-const lptMintTx = await mintChecked("the deployer", lpt, deployer.address, STAKE_WHOLE_TOKENS);
+yf.RWD = tokenEntry(farmRwd);
+save();
+yf.mintLptTx = await mintChecked("the deployer", lpt, deployer.address, STAKE_WHOLE_TOKENS);
+save();
 const farm = await deployPool("SimpleYieldFarm", lpt, farmRwd);
-const farmFundTx = await mintChecked("SimpleYieldFarm", farmRwd, farm.address, FUND_WHOLE_RWD);
+yf.SimpleYieldFarm = { address: farm.address, txHash: farm.txHash, stakingToken: lpt.address, rewardToken: farmRwd.address };
+save();
+yf.fundRwdTx = await mintChecked("SimpleYieldFarm", farmRwd, farm.address, FUND_WHOLE_RWD);
+save();
 
 // ---------------------------------------------------------------------------
 // Part 2 — Protocol staking
 // ---------------------------------------------------------------------------
 console.log("\n── Part 2 — Protocol staking ───────────────────────────────");
+const st = record.staking;
 const abc = await deployToken("Protocol Token", "ABC");
+st.ABC = tokenEntry(abc);
+save();
 const stakingRwd = await deployToken("Reward Token", "RWD");
-const abcMintTx = await mintChecked("the deployer", abc, deployer.address, STAKE_WHOLE_TOKENS);
+st.RWD = tokenEntry(stakingRwd);
+save();
+st.mintAbcTx = await mintChecked("the deployer", abc, deployer.address, STAKE_WHOLE_TOKENS);
+save();
 const staking = await deployPool("SimpleStaking", abc, stakingRwd);
-const stakingFundTx = await mintChecked("SimpleStaking", stakingRwd, staking.address, FUND_WHOLE_RWD);
+st.SimpleStaking = { address: staking.address, txHash: staking.txHash, stakingToken: abc.address, rewardToken: stakingRwd.address };
+save();
+st.fundRwdTx = await mintChecked("SimpleStaking", stakingRwd, staking.address, FUND_WHOLE_RWD);
+record.status = "complete";
+save();
 
 // ---------------------------------------------------------------------------
-// Record + frontend configuration
+// Frontend configuration (the record has been saved after every step)
 // ---------------------------------------------------------------------------
-const token = ({ address, txHash, name, symbol }) => ({ address, txHash, name, symbol });
-const record = {
-  experiment: 5,
-  network: networkName,
-  chainId: Number(chainId),
-  deployedAt: new Date().toISOString(),
-  deployer: deployer.address,
-  rewardRate: "1e15 RWD base units per whole staked token per second (0.001 RWD)",
-  yieldFarming: {
-    LPT: token(lpt),
-    RWD: token(farmRwd),
-    SimpleYieldFarm: { address: farm.address, txHash: farm.txHash, stakingToken: lpt.address, rewardToken: farmRwd.address },
-    mintLptTx: lptMintTx,
-    fundRwdTx: farmFundTx,
-  },
-  staking: {
-    ABC: token(abc),
-    RWD: token(stakingRwd),
-    SimpleStaking: { address: staking.address, txHash: staking.txHash, stakingToken: abc.address, rewardToken: stakingRwd.address },
-    mintAbcTx: abcMintTx,
-    fundRwdTx: stakingFundTx,
-  },
-};
-
-mkdirSync("deployments", { recursive: true });
-// A separate file per experiment, and never on top of an existing record.
-let recordPath = `deployments/${networkName}-experiment5.json`;
-if (existsSync(recordPath) && networkName !== "default") {
-  recordPath = `deployments/${networkName}-experiment5-${Date.now()}.json`;
-  console.log(`\nAn earlier Experiment 5 record exists; keeping it and writing ${recordPath} instead.`);
-}
-writeFileSync(recordPath, `${JSON.stringify(record, null, 2)}\n`);
-
 console.log(`\nDeployment record written to ${recordPath}`);
 if (networkName === "default") {
   console.log(
