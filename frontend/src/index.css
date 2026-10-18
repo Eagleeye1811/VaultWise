@@ -1313,3 +1313,288 @@ code,
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Experiment 4 — AMM liquidity pool ──────────────────────────────────── */
+
+.banner-info {
+  background: var(--blue-050);
+  border-color: var(--blue-100);
+  color: var(--blue-700);
+}
+
+/* "read" (free view call) vs "tx" (MetaMask signature + gas) markers. */
+.kind {
+  display: inline-block;
+  padding: 1px 7px;
+  margin-right: 4px;
+  border-radius: 999px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+.kind-read {
+  background: var(--green-050);
+  color: var(--green-600);
+}
+
+.kind-tx {
+  background: var(--amber-050);
+  color: var(--amber-700);
+}
+
+.event-badge.amm {
+  background: var(--green-050);
+  color: var(--green-600);
+}
+
+.stats-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* Approve A / Approve B / Add — wraps instead of squeezing on narrow cards. */
+.step-actions-3 {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.83rem;
+  color: var(--ink-700);
+  cursor: pointer;
+}
+
+.inline-warn {
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--amber-050);
+  color: var(--amber-700);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.warn-text {
+  color: var(--amber-700);
+  font-weight: 600;
+}
+
+.contract-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+}
+
+.btn-inline {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  margin-left: 6px;
+}
+
+.kind-calc {
+  background: var(--blue-100);
+  color: var(--blue-700);
+}
+
+.kind-hist {
+  background: var(--ink-100);
+  color: var(--ink-700);
+}
+
+.btn-small {
+  padding: 7px 12px;
+  font-size: 0.8rem;
+}
+
+.quote-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  font-size: 0.82rem;
+}
+
+.quote-grid dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-500);
+}
+
+.quote-grid dd {
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.tolerance-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tolerance-row .field-label {
+  margin-right: 4px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ink-300);
+  background: var(--white);
+  color: var(--ink-700);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: var(--blue-600);
+  background: var(--blue-050);
+  color: var(--blue-700);
+}
+
+.preflight {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  border: 1px solid var(--ink-100);
+}
+
+.preflight.ok {
+  background: var(--green-050);
+  border-color: #bfe6d4;
+}
+
+.preflight.bad {
+  background: var(--red-050);
+  border-color: #f5c6c3;
+}
+
+.preflight-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.preflight-time {
+  color: var(--ink-500);
+}
+
+.preflight-problems {
+  margin: 0 0 10px 18px;
+  color: var(--red-600);
+  line-height: 1.45;
+}
+
+.preflight-facts {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) 1fr;
+  gap: 4px 12px;
+}
+
+.preflight-facts dt {
+  color: var(--ink-500);
+}
+
+.preflight-facts dd {
+  color: var(--ink-900);
+  word-break: break-all;
+}
+
+.composition {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.composition-bar {
+  display: flex;
+  height: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.composition-bar span {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  background: var(--blue-500);
+  color: var(--white);
+}
+
+.composition-bar span + span {
+  background: var(--green-600);
+}
+
+.composition-note {
+  font-size: 0.76rem;
+  color: var(--ink-500);
+}
+
+.result-card {
+  border: 1px solid var(--green-050);
+  box-shadow: 0 0 0 2px var(--green-050);
+}
+
+.result-flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.result-amount.accent {
+  color: var(--green-600);
+}
+
+.activity-scroll {
+  overflow-x: auto;
+}
+
+.activity {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.activity th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-500);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ink-100);
+}
+
+.activity td {
+  padding: 8px;
+  border-bottom: 1px solid var(--ink-100);
+  white-space: nowrap;
+}
+
+.activity a {
+  color: var(--blue-600);
+  text-decoration: none;
+}
+
+/* Experiment 5 — prose tables (the staking vs. farming comparison) wrap. */
+.activity.activity-wrap td {
+  white-space: normal;
+  vertical-align: top;
+}

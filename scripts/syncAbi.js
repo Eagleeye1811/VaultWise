@@ -33,6 +33,50 @@ const SOURCES = [
     artifact: "artifacts/contracts/experiment1/VaultWiseVault.sol/VaultWiseVault.json",
     description: "Experiment 1 — the original plain-ETH vault, kept so its deployment stays usable.",
   },
+  {
+    exportName: "MOCK_ERC20_ABI",
+    artifact: "artifacts/contracts/experiment4/MockERC20.sol/MockERC20.json",
+    description:
+      "Generic 18-decimal test token (contracts/experiment4/MockERC20.sol). Experiment 4 deploys it as TKA/TKB; Experiment 5 reuses it as LPT, ABC and RWD.",
+  },
+  {
+    exportName: "SIMPLE_AMM_ABI",
+    artifact: "artifacts/contracts/experiment4/SimpleAMM.sol/SimpleAMM.json",
+    description:
+      "Experiment 4 — no-fee constant-product AMM. Includes the inherited ERC-20 functions of its vwLP shares.",
+  },
+  {
+    exportName: "SIMPLE_YIELD_FARM_ABI",
+    artifact: "artifacts/contracts/experiment5/SimpleYieldFarm.sol/SimpleYieldFarm.json",
+    description:
+      "Experiment 5, Part 1 — LP-token yield farm (stake LPT, harvest RWD). Its tokens use MOCK_ERC20_ABI.",
+  },
+  {
+    exportName: "SIMPLE_STAKING_ABI",
+    artifact: "artifacts/contracts/experiment5/SimpleStaking.sol/SimpleStaking.json",
+    description:
+      "Experiment 5, Part 2 — protocol-token staking (stake ABC, claim RWD). Its tokens use MOCK_ERC20_ABI.",
+  },
+  {
+    exportName: "DEX_TOKEN_ABI",
+    artifact: "artifacts/contracts/experiment6/DexMockERC20.sol/DexMockERC20.json",
+    description: "Experiment 6 — public-mint 18-decimal test token (the sheet's MockERC20), deployed as DXA/DXB/DXC.",
+  },
+  {
+    exportName: "DEX_FACTORY_ABI",
+    artifact: "artifacts/contracts/experiment6/Factory.sol/Factory.json",
+    description: "Experiment 6 — DEX Factory: createPair, getPair, allPairs.",
+  },
+  {
+    exportName: "DEX_ROUTER_ABI",
+    artifact: "artifacts/contracts/experiment6/Router.sol/Router.json",
+    description: "Experiment 6 — DEX Router: liquidity, exact-input swaps (multi-hop), quotes.",
+  },
+  {
+    exportName: "DEX_PAIR_ABI",
+    artifact: "artifacts/contracts/experiment6/Pair.sol/Pair.json",
+    description: "Experiment 6 — DEX Pair: reserves, mint/burn/swap, and its own ERC-20 LP token.",
+  },
 ];
 
 function loadArtifact(path) {
@@ -55,7 +99,7 @@ const blocks = SOURCES.map(({ exportName, artifact, description }) => {
   const functions = abi.filter((e) => e.type === "function").length;
   const events = abi.filter((e) => e.type === "event").length;
   console.log(
-    `  ${exportName.padEnd(16)} <- ${contractName.padEnd(16)} ${functions} functions, ${events} events`
+    `  ${exportName.padEnd(21)} <- ${contractName.padEnd(16)} ${functions} functions, ${events} events`
   );
 
   return [

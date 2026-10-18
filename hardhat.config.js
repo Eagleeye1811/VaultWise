@@ -2,6 +2,7 @@ import { configVariable } from "hardhat/config";
 
 import hardhatEthers from "@nomicfoundation/hardhat-ethers";
 import hardhatEthersChaiMatchers from "@nomicfoundation/hardhat-ethers-chai-matchers";
+import hardhatKeystore from "@nomicfoundation/hardhat-keystore";
 import hardhatMocha from "@nomicfoundation/hardhat-mocha";
 import hardhatNetworkHelpers from "@nomicfoundation/hardhat-network-helpers";
 import hardhatVerify from "@nomicfoundation/hardhat-verify";
@@ -28,6 +29,7 @@ export default {
   plugins: [
     hardhatEthers,
     hardhatEthersChaiMatchers,
+    hardhatKeystore,
     hardhatMocha,
     hardhatNetworkHelpers,
     hardhatVerify,

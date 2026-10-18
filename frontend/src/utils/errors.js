@@ -60,10 +60,41 @@ const REVERT_MESSAGES = [
     "You cannot redeem that many shares — it is more than you hold.",
   ],
 
+  // ── Experiment 4 — SimpleAMM custom errors ────────────────────────
+  // Longer names first: "InsufficientLiquidityMinted" contains
+  // "InsufficientLiquidity", and the first match wins.
+  [
+    "InsufficientLiquidityMinted",
+    "That deposit is too small to mint any LP shares. Increase both amounts.",
+  ],
+  [
+    "InsufficientLiquidity",
+    "The pool has no liquidity on one side yet. Add liquidity before swapping.",
+  ],
+  [
+    "InsufficientOutputAmount",
+    "That amount is too small — it would pay out 0 of a token. Use a larger amount.",
+  ],
+  [
+    "InsufficientLPBalance",
+    "You cannot remove more LP shares than you hold.",
+  ],
+  [
+    "InsufficientAllowance",
+    "The pool is not approved to move that many tokens yet. Approve the token first, for at least this amount.",
+  ],
+  ["InsufficientBalance", "You do not have that many tokens in your wallet."],
+  ["IdenticalTokens", "Token A and Token B must be different contracts."],
+  ["NotAContract", "One of the configured token addresses is not a contract."],
+  ["InvalidToken", "That token is not part of this pool."],
+  ["ZeroAmount", "Amounts must be greater than zero."],
+  ["ZeroAddress", "A token address was the zero address."],
+  ["ReentrancyGuardReentrantCall", "The pool rejected a re-entrant call."],
+
   // ── Experiment 3 — MockUSDC access control ────────────────────────
   [
     "OwnableUnauthorizedAccount",
-    "Only the wallet that deployed MockUSDC can mint test tokens. Switch to the deployer account, or ask it to mint some for you.",
+    "Only the wallet that deployed this token can mint test tokens. Switch to the deployer account, or ask it to mint some for you.",
   ],
 ];
 
@@ -78,12 +109,16 @@ export function friendlyError(error, fallback = "Something went wrong. Please tr
 
   if (!error) return fallback;
 
-  // 1. Known error codes (MetaMask numeric codes or ethers string codes).
   const code = error.code ?? error?.info?.error?.code;
-  if (code !== undefined && CODE_MESSAGES[code]) return CODE_MESSAGES[code];
 
-  // 2. Solidity revert reasons, wherever ethers stashed them.
+  // 1. The user said no — nothing else about the error matters.
+  if (code === 4001 || code === "ACTION_REJECTED") return CODE_MESSAGES[code];
+
+  // 2. Solidity revert reasons and custom-error names, wherever ethers stashed
+  //    them. Checked before the generic CALL_EXCEPTION text so a specific
+  //    reason ("not approved yet") wins over "the contract rejected this call".
   const haystack = [
+    error.revert?.name,
     error.reason,
     error.shortMessage,
     error.message,
@@ -97,7 +132,10 @@ export function friendlyError(error, fallback = "Something went wrong. Please tr
     if (haystack.includes(needle)) return friendly;
   }
 
-  // 3. A few common phrases that don't carry a clean code.
+  // 3. Known error codes (MetaMask numeric codes or ethers string codes).
+  if (code !== undefined && CODE_MESSAGES[code]) return CODE_MESSAGES[code];
+
+  // 4. A few common phrases that don't carry a clean code.
   if (/user (denied|rejected)/i.test(haystack))
     return "You rejected the request in MetaMask.";
   if (/insufficient funds/i.test(haystack))
@@ -107,6 +145,6 @@ export function friendlyError(error, fallback = "Something went wrong. Please tr
   if (/transfer amount exceeds allowance|insufficient allowance/i.test(haystack))
     return "The vault is not approved to move that many tokens yet. Run Approve first.";
 
-  // 4. `error.reason` is usually a clean one-liner already; otherwise fall back.
+  // 5. `error.reason` is usually a clean one-liner already; otherwise fall back.
   return error.reason || fallback;
 }

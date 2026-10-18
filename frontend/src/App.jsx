@@ -6,6 +6,9 @@ import Footer from "./components/Footer";
 
 import EthVaultView from "./experiments/experiment1/EthVaultView";
 import Erc4626View from "./experiments/experiment3/Erc4626View";
+import AmmView from "./experiments/experiment4/AmmView";
+import StakingView from "./experiments/experiment5/StakingView";
+import DexView from "./experiments/experiment6/DexView";
 
 import {
   DEFAULT_EXPERIMENT,
@@ -45,6 +48,7 @@ export default function App() {
     walletError,
     setWalletError,
     connect,
+    switchToTargetNetwork,
     refresh,
     refreshKey,
   } = useWallet();
@@ -91,8 +95,11 @@ export default function App() {
 
         {connected && !isCorrectNetwork && (
           <Banner tone="warn">
-            Please switch MetaMask to {TARGET_NETWORK_NAME}. VaultWise never switches
-            networks for you.
+            MetaMask is on {networkName || "another network"}, not {TARGET_NETWORK_NAME}. Reads and
+            transactions are disabled until you switch.{" "}
+            <button type="button" className="btn btn-outline btn-inline" onClick={switchToTargetNetwork}>
+              Switch to {TARGET_NETWORK_NAME}
+            </button>
           </Banner>
         )}
 
@@ -123,6 +130,30 @@ export default function App() {
             account={account}
             isCorrectNetwork={isCorrectNetwork}
             ethBalance={ethBalance}
+            refreshKey={refreshKey}
+            refresh={refresh}
+          />
+        ) : experiment === "experiment-6" ? (
+          <DexView
+            account={account}
+            networkName={networkName}
+            isCorrectNetwork={isCorrectNetwork}
+            refreshKey={refreshKey}
+            refresh={refresh}
+          />
+        ) : experiment === "experiment-5" ? (
+          <StakingView
+            account={account}
+            networkName={networkName}
+            isCorrectNetwork={isCorrectNetwork}
+            refreshKey={refreshKey}
+            refresh={refresh}
+          />
+        ) : experiment === "experiment-4" ? (
+          <AmmView
+            account={account}
+            networkName={networkName}
+            isCorrectNetwork={isCorrectNetwork}
             refreshKey={refreshKey}
             refresh={refresh}
           />

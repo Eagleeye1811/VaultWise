@@ -103,6 +103,28 @@ export function useWallet() {
     }
   }, [applyAccount, readChainState, refresh]);
 
+  /**
+   * Ask MetaMask to switch to the target network. Only ever called from a
+   * button the user clicks, and MetaMask shows its own approval prompt — the
+   * app never changes networks on its own. The `chainChanged` listener below
+   * picks up the result.
+   */
+  const switchToTargetNetwork = useCallback(async () => {
+    setWalletError("");
+    if (!hasMetaMask()) {
+      setWalletError(NO_METAMASK);
+      return;
+    }
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: `0x${TARGET_CHAIN_ID.toString(16)}` }],
+      });
+    } catch (error) {
+      setWalletError(friendlyError(error, `Could not switch MetaMask to ${TARGET_NETWORK_NAME}.`));
+    }
+  }, []);
+
   /* ---------------------------------------------------------------- *
    * Mount: silently restore an already-approved account, then listen.
    * ---------------------------------------------------------------- */
@@ -181,6 +203,7 @@ export function useWallet() {
     walletError,
     setWalletError,
     connect,
+    switchToTargetNetwork,
     refresh,
     refreshKey,
   };

@@ -51,3 +51,12 @@ typechain-types/
 deployments/default.json
 deployments/localhost.json
 deployments/hardhat.json
+deployments/default-experiment4.json
+deployments/localhost-experiment4.json
+deployments/hardhat-experiment4.json
+deployments/default-experiment5.json
+deployments/localhost-experiment5.json
+deployments/hardhat-experiment5.json
+deployments/default-experiment6.json
+deployments/localhost-experiment6.json
+deployments/hardhat-experiment6.json

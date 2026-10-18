@@ -27,6 +27,9 @@ const LABELS = {
   failed: "Transaction failed",
 };
 
+/** Badge colour per event standard; anything unknown renders as ERC-20. */
+const BADGE_CLASS = { "ERC-4626": "erc4626", AMM: "amm", Farm: "amm", Staking: "amm", DEX: "amm" };
+
 /** Render one decoded event argument as readable text. */
 function renderArg({ type, value }, decimals) {
   if (type === "address") return shortAddress(value, 6, 4);
@@ -91,7 +94,7 @@ export default function TransactionStatus({ tx, decimals = null }) {
             <ul className="event-list">
               {events.map((event, index) => (
                 <li key={`${event.source}-${event.name}-${index}`} className="event-item">
-                  <span className={`event-badge ${event.standard === "ERC-4626" ? "erc4626" : "erc20"}`}>
+                  <span className={`event-badge ${BADGE_CLASS[event.standard] ?? "erc20"}`}>
                     {event.standard}
                   </span>
                   <code className="event-sig">

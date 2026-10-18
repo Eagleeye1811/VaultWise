@@ -1,6 +1,16 @@
 import { useCallback, useState } from "react";
 
 import { friendlyError } from "../utils/errors";
+import {
+  IDLE_TX,
+  awaitingSignature,
+  confirmed,
+  failed,
+  reverted,
+  submitted,
+} from "../utils/txState";
+
+export { IDLE_TX };
 
 /**
  * The transaction lifecycle, shared by both experiments.
@@ -15,15 +25,6 @@ import { friendlyError } from "../utils/errors";
  * events visible in the UI instead of only in a block explorer.
  */
 
-export const IDLE_TX = Object.freeze({
-  status: "idle", // idle | pending | confirmed | failed
-  hash: null,
-  message: "",
-  steps: [],
-  activeStep: 0,
-  events: [],
-});
-
 /**
  * Decode a receipt's logs against the contracts we know about.
  *
@@ -33,7 +34,7 @@ export const IDLE_TX = Object.freeze({
  * would attribute a share mint to the wrong contract.
  *
  * @param {import("ethers").TransactionReceipt} receipt
- * @param {{ name: string, address: string, iface: import("ethers").Interface, standard?: string }[]} sources
+ * @param {{ name: string, address: string, iface: import("ethers").Interface, standardOf?: (eventName: string) => string | undefined }[]} sources
  */
 function decodeReceiptLogs(receipt, sources) {
   if (!receipt?.logs || sources.length === 0) return [];
@@ -56,9 +57,12 @@ function decodeReceiptLogs(receipt, sources) {
     decoded.push({
       source: source.name,
       name: parsed.name,
-      // ERC-4626 defines exactly two events; everything else here is ERC-20.
+      // A source may label its own events (Experiment 4 tags the pool's
+      // LiquidityAdded/Swap/... as "AMM"). Otherwise: ERC-4626 defines exactly
+      // two events, and everything else here is ERC-20.
       standard:
-        parsed.name === "Deposit" || parsed.name === "Withdraw" ? "ERC-4626" : "ERC-20",
+        source.standardOf?.(parsed.name) ??
+        (parsed.name === "Deposit" || parsed.name === "Withdraw" ? "ERC-4626" : "ERC-20"),
       args: parsed.fragment.inputs.map((input, i) => ({
         name: input.name,
         type: input.type,
@@ -69,13 +73,6 @@ function decodeReceiptLogs(receipt, sources) {
 
   return decoded;
 }
-
-/** Turn step labels + the active index into renderable step states. */
-const buildSteps = (labels, activeIndex, allDone = false) =>
-  labels.map((label, index) => ({
-    label,
-    state: allDone || index < activeIndex ? "done" : index === activeIndex ? "active" : "todo",
-  }));
 
 export function useTransaction() {
   const [tx, setTx] = useState(IDLE_TX);
@@ -114,57 +111,30 @@ export function useTransaction() {
       carryEvents = [],
     }) => {
       setPendingAction(action);
-      setTx({
-        status: "pending",
-        hash: null,
-        message: "Waiting for you to confirm in MetaMask...",
-        steps: buildSteps(steps, activeStep),
-        activeStep,
-        events: carryEvents,
-      });
+      setTx(awaitingSignature(steps, activeStep, carryEvents));
 
       try {
         const transaction = await send();
 
-        setTx((current) => ({
-          ...current,
-          status: "pending",
-          hash: transaction.hash,
-          message: pending,
-        }));
+        setTx((current) => submitted(current, transaction.hash, pending));
 
         const receipt = await transaction.wait();
 
         if (receipt && receipt.status === 0) {
-          setTx((current) => ({
-            ...current,
-            status: "failed",
-            hash: transaction.hash,
-            message: "The transaction was mined but reverted.",
-          }));
+          setTx((current) => reverted(current, transaction.hash));
           return { ok: false, events: carryEvents };
         }
 
         const events = [...carryEvents, ...decodeReceiptLogs(receipt, logSources)];
 
-        setTx({
-          status: finalStep ? "confirmed" : "pending",
-          hash: transaction.hash,
-          message: success,
-          steps: buildSteps(steps, finalStep ? steps.length : activeStep + 1, finalStep),
-          activeStep: finalStep ? steps.length : activeStep + 1,
-          events,
-        });
+        setTx(
+          confirmed({ hash: transaction.hash, success, steps, activeStep, finalStep, events })
+        );
 
         return { ok: true, receipt, events };
       } catch (error) {
         const message = friendlyError(error, "The transaction could not be completed.");
-        setTx((current) => ({
-          ...current,
-          status: "failed",
-          hash: error?.transaction?.hash ?? current.hash ?? null,
-          message,
-        }));
+        setTx((current) => failed(current, message, error?.transaction?.hash));
         return { ok: false, error, message, events: carryEvents };
       } finally {
         setPendingAction(null);
