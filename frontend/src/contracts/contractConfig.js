@@ -74,6 +74,14 @@ const readAddress = (value) => (/^0x[a-fA-F0-9]{40}$/.test(value ?? "") ? value 
 export const TARGET_CHAIN_ID = 11155111n;
 export const TARGET_NETWORK_NAME = "Sepolia Testnet";
 
+/**
+ * Public Sepolia RPC used for READS when no wallet is connected (or the wallet
+ * is on another network), so markets and TVL render for every visitor.
+ * Writes always go through MetaMask. Override with VITE_SEPOLIA_RPC_URL.
+ */
+export const PUBLIC_RPC_URL =
+  import.meta.env.VITE_SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
+
 /** Block explorer links. */
 export const EXPLORER_TX_BASE_URL = "https://sepolia.etherscan.io/tx/";
 export const EXPLORER_ADDRESS_BASE_URL = "https://sepolia.etherscan.io/address/";

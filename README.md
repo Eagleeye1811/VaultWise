@@ -10,6 +10,35 @@
 
 ---
 
+## The VaultWise platform (frontend)
+
+The React app is a single DeFi platform, not a per-experiment switcher.
+Every product reads live from Sepolia; your wallet signs every write.
+
+| Page          | Route          | Built on                                                    |
+| ------------- | -------------- | ----------------------------------------------------------- |
+| Overview      | `#/overview`   | All products: live liquidity, terms, your positions         |
+| Swap          | `#/swap`       | Exp 6 Router (best route, multi-hop, slippage, deadline) + Exp 4 classic pool |
+| Pools         | `#/pools`      | Exp 6 pairs + Exp 4 pool: add / remove liquidity, create pairs |
+| Earn          | `#/earn`       | Exp 3 ERC-4626 USDC vault, Exp 1 ETH vault, Exp 5 farm + staking (live-ticking rewards) |
+| Portfolio     | `#/portfolio`  | Wallet balances + every open position, valued in underlying tokens |
+| Faucet        | `#/faucet`     | Public mint for DXA/DXB/DXC; owner-only mint (and reward-pool funding) for the Ownable mocks |
+| Activity      | `#/activity`   | Transactions sent from this browser, with Etherscan links   |
+| Labs          | `#/labs`       | The original experiment consoles, unchanged (`#/experiment-N` links still work) |
+
+* **Reads** go through MetaMask when it is on Sepolia, otherwise through a public
+  RPC (`VITE_SEPOLIA_RPC_URL`, default publicnode.com) — visitors without a
+  wallet still see the markets. The snapshot refreshes every 20 s and after
+  every confirmed transaction.
+* **Writes** run as flows (approve → action) with a toast that follows each
+  step to its receipt. Approvals are for the exact amount.
+* There is no price oracle yet (Experiment 7), so nothing is converted to USD.
+
+Code: `frontend/src/platform/` (shell, pages, shared UI), `hooks/useProtocolData.js`
+(the snapshot), `platform/registry.js` (tokens, products, navigation).
+
+---
+
 ## 1. What VaultWise is
 
 VaultWise is a DeFi treasury / vault management project built across **10 experiments**.
