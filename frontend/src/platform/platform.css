@@ -1550,6 +1550,10 @@ body {
   text-align: right;
 }
 
+.vw-tr-prices {
+  grid-template-columns: minmax(200px, 1.2fr) 1fr 1.3fr 0.8fr 0.7fr;
+}
+
 .vw-tr:last-child {
   border-bottom: 0;
 }

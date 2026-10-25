@@ -12,7 +12,8 @@ import {
 import { POOLS } from "../../experiments/experiment5/pools";
 import { formatDuration, fundingRunwaySeconds, projectEarned } from "../../experiments/experiment5/rewardMath";
 import { approveStep, checkAmount, writeContract } from "../actions";
-import { fmtShare, fmtToken } from "../format";
+import { fmtBps, fmtShare, fmtToken, fmtUsd } from "../format";
+import { rewardAprBps, usablePrice, usdValue } from "../pricing";
 import { usePlatform } from "../usePlatform";
 import { ActionButton, AmountField, Badge, Card, EmptyState, Notice, PageHeader, Row, Skeleton, Stat, Tabs, TokenIcon } from "../ui";
 
@@ -20,7 +21,13 @@ import { ActionButton, AmountField, Badge, Card, EmptyState, Notice, PageHeader,
  * Earn — the yield side of the platform:
  *   Vaults   ERC-4626 USDC vault (Experiment 3) and the ETH vault (Experiment 1)
  *   Farms    LPT → RWD yield farm and ABC → RWD staking (Experiment 5)
+ *
+ * With the PriceOracle deployed, deposits show their USD value and the
+ * reward pools an APR (reward value per year over the value staked).
  */
+
+/** "≈ $1,234.56" when the oracle prices it, otherwise undefined (no sub-line). */
+const usdSub = (data, raw, token) => (data.oracleConfigured && raw !== null && raw !== undefined ? `≈ ${fmtUsd(usdValue(raw, token, data.prices))}` : undefined);
 
 const ETH = { id: "ETH", symbol: "ETH", name: "Sepolia Ether", decimals: 18, hue: "#4a5785" };
 const POOL_ADDRESS = { farm: YIELD_FARM_ADDRESS, staking: STAKING_ADDRESS };
@@ -93,7 +100,7 @@ function UsdcVault({ data }) {
     <Card className="vw-product">
       <ProductHead token={usdc} title="Core USDC Vault" tag="ERC-4626" sub="Stablecoin treasury · deposit USDC, hold vwUSDC shares" />
       <div className="vw-mini-stats">
-        <Stat label="Total deposits" value={`${fmtToken(v.totalAssets, usdc.decimals)} USDC`} />
+        <Stat label="Total deposits" value={`${fmtToken(v.totalAssets, usdc.decimals)} USDC`} sub={usdSub(data, v.totalAssets, usdc)} />
         <Stat label="Share price" value={v.totalSupply ? `${fmtToken(((v.totalAssets + 1n) * 10n ** BigInt(share.decimals)) / (v.totalSupply + 1n), usdc.decimals)} USDC` : "1 USDC"} />
         <Stat label="Your deposit" value={wallet.account ? `${fmtToken(v.shareValue, usdc.decimals)} USDC` : "—"} sub={wallet.account && v.shares ? `${fmtToken(v.shares, share.decimals)} vwUSDC` : undefined} />
       </div>
@@ -161,7 +168,7 @@ function EthVault({ data }) {
     <Card className="vw-product">
       <ProductHead token={ETH} title="ETH Savings Vault" tag="Native ETH" sub="Park Sepolia ETH in a non-custodial vault, withdraw any time" />
       <div className="vw-mini-stats">
-        <Stat label="Total deposits" value={`${fmtToken(v.total, 18)} ETH`} />
+        <Stat label="Total deposits" value={`${fmtToken(v.total, 18)} ETH`} sub={usdSub(data, v.total, ETH)} />
         <Stat label="Your deposit" value={wallet.account ? `${fmtToken(v.mine, 18)} ETH` : "—"} />
         <Stat label="Your share" value={wallet.account ? fmtShare(v.mine, v.total) : "—"} />
       </div>
@@ -218,6 +225,7 @@ function RewardPool({ data, poolKey }) {
   const perDay = p.rate && p.precision ? (p.rate * 86_400n * 10n ** 18n) / p.precision : null;
   const runway = fundingRunwaySeconds(p.rewardBalance, p.totalStaked, p.rate, p.precision);
   const underfunded = earned !== null && p.rewardBalance !== null && earned > p.rewardBalance;
+  const apr = data.oracleConfigured ? rewardAprBps(perDay, usablePrice(rewardToken, data.prices), usablePrice(stakeToken, data.prices)) : null;
 
   const balance = tab === "stake" ? stakeToken.balance : p.staked;
   const c = checkAmount(amount, stakeToken, wallet.account ? balance : null, { overLabel: tab === "stake" ? `Insufficient ${stakeToken.symbol}` : "More than you have staked" });
@@ -253,8 +261,12 @@ function RewardPool({ data, poolKey }) {
         sub={`Stake ${stakeToken.symbol}, earn ${rewardToken.symbol} every second`}
       />
       <div className="vw-mini-stats">
-        <Stat label="Total staked" value={`${fmtToken(p.totalStaked, 18)} ${stakeToken.symbol}`} />
-        <Stat label="Emission" value={`${fmtToken(perDay, 18)} ${rewardToken.symbol}`} sub={`per ${stakeToken.symbol} per day`} />
+        <Stat label="Total staked" value={`${fmtToken(p.totalStaked, 18)} ${stakeToken.symbol}`} sub={usdSub(data, p.totalStaked, stakeToken)} />
+        <Stat
+          label="Emission"
+          value={`${fmtToken(perDay, 18)} ${rewardToken.symbol}`}
+          sub={`per ${stakeToken.symbol} per day${apr !== null ? ` · ${fmtBps(apr)} APR` : ""}`}
+        />
         <Stat label="Reward reserve" value={`${fmtToken(p.rewardBalance, 18)} ${rewardToken.symbol}`} sub={runway !== null ? `≈ ${formatDuration(runway)} at current stake` : "No stakers yet"} />
       </div>
 

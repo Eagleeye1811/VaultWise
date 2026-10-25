@@ -77,6 +77,11 @@ const SOURCES = [
     artifact: "artifacts/contracts/experiment6/Pair.sol/Pair.json",
     description: "Experiment 6 — DEX Pair: reserves, mint/burn/swap, and its own ERC-20 LP token.",
   },
+  {
+    exportName: "PRICE_ORACLE_ABI",
+    artifact: "artifacts/contracts/oracle/PriceOracle.sol/PriceOracle.json",
+    description: "PriceOracle — token → Chainlink feed registry with validated, 18-decimal USD prices.",
+  },
 ];
 
 function loadArtifact(path) {

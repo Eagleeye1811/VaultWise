@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "VaultWise smart contracts — Hardhat workspace for compiling, testing and deploying the Experiment 1 ETH vault, the Experiment 3 ERC-4626 vault, the Experiment 4 AMM liquidity pool the Experiment 5 yield farm and staking contracts and the Experiment 6 DEX prototype.",
+  "description": "VaultWise smart contracts — Hardhat workspace for compiling, testing and deploying the Experiment 1 ETH vault, the Experiment 3 ERC-4626 vault, the Experiment 4 AMM liquidity pool the Experiment 5 yield farm and staking contracts, the Experiment 6 DEX prototype and the Chainlink-backed PriceOracle.",
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
@@ -24,7 +24,11 @@
     "test:exp6": "hardhat test test/experiment6.test.js test/experiment6.frontend.test.js",
     "demo:exp6": "hardhat run scripts/experiment6Lifecycle.js",
     "deploy:exp6": "hardhat run scripts/deployExperiment6.js",
-    "deploy:exp6:sepolia": "hardhat run scripts/deployExperiment6.js --network sepolia"
+    "deploy:exp6:sepolia": "hardhat run scripts/deployExperiment6.js --network sepolia",
+    "test:oracle": "hardhat test test/oracle.test.js test/oracle.frontend.test.js",
+    "deploy:oracle": "hardhat run scripts/deployOracle.js",
+    "deploy:oracle:sepolia": "hardhat run scripts/deployOracle.js --network sepolia",
+    "verify:oracle": "node scripts/checkOracle.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^4.0.15",

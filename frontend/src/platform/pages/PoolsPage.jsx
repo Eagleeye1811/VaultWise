@@ -5,7 +5,8 @@ import { applySlippage, estimateBurn, estimateLiquidity, optimalAmounts, quote a
 import { estimateLpShares, estimateRemoval, matchingAmount } from "../../experiments/experiment4/ammMath";
 import { toExactString } from "../../utils/format";
 import { approveStep, chainDeadline, checkAmount, useTradeSettings, writeContract } from "../actions";
-import { fmtRate, fmtShare, fmtToken } from "../format";
+import { fmtPpm, fmtRate, fmtShare, fmtToken, fmtUsd } from "../format";
+import { poolDeviationPpm, sumUsd, usdValue } from "../pricing";
 import { usePlatform } from "../usePlatform";
 import { DEX_TOKEN_ID } from "../registry";
 import SettingsPopover from "../SettingsPopover";
@@ -63,6 +64,13 @@ function usePools(data) {
         fee: "0%",
         venue: "Classic",
       });
+    }
+    // At oracle prices: the pool's value, and the deviation of its spot price from the oracle rate.
+    if (data.oracleConfigured) {
+      for (const pool of pools) {
+        pool.tvl = pool.exists ? sumUsd([usdValue(pool.ra, pool.a, data.prices), usdValue(pool.rb, pool.b, data.prices)]) : null;
+        pool.deviation = poolDeviationPpm(pool.ra, pool.rb, pool.a, pool.b, data.prices);
+      }
     }
     return pools;
   }, [data]);
@@ -261,6 +269,7 @@ function PoolRow({ pool, open, onToggle, settings }) {
         <span className="vw-pool-cell" data-label="Liquidity">
           {pool.exists ? (
             <>
+              {pool.tvl !== undefined && <strong className="vw-block">{fmtUsd(pool.tvl)}</strong>}
               {fmtToken(ra, a.decimals)} {a.symbol}
               <br />
               {fmtToken(rb, b.decimals)} {b.symbol}
@@ -283,6 +292,11 @@ function PoolRow({ pool, open, onToggle, settings }) {
         <div className="vw-pool-body">
           <div className="vw-pool-info">
             {pool.exists && ra > 0n && <CompositionBar left={ra} right={rb} leftLabel={a.symbol} rightLabel={b.symbol} />}
+            {pool.deviation !== undefined && pool.deviation !== null && (
+              <Row label="Pool price vs oracle">
+                <Badge tone={Math.abs(pool.deviation) < 10_000 ? "good" : Math.abs(pool.deviation) < 50_000 ? "warn" : "bad"}>{fmtPpm(pool.deviation)}</Badge>
+              </Row>
+            )}
             <Row label="LP supply">{fmtToken(supply, 18)}</Row>
             <Row label="Your LP tokens">{fmtToken(lp, 18)}</Row>
             {position && (
@@ -314,6 +328,8 @@ export default function PoolsPage() {
 
   const live = pools.filter((p) => p.exists && p.ra > 0n).length;
   const mine = pools.filter((p) => p.lp && p.lp > 0n).length;
+  const priced = Boolean(protocol.data?.oracleConfigured);
+  const totalTvl = priced ? pools.reduce((sum, p) => sum + (p.tvl ?? 0n), 0n) : null;
 
   return (
     <>
@@ -323,6 +339,7 @@ export default function PoolsPage() {
         actions={<SettingsPopover settings={settings} onChange={setSettings} />}
       />
       <div className="vw-stats-row">
+        {priced && <Stat label="Total liquidity" value={fmtUsd(totalTvl)} sub="At oracle prices" />}
         <Stat label="Pools" value={pools.length} loading={!protocol.data} sub="DEX pairs + classic pool" />
         <Stat label="With liquidity" value={live} loading={!protocol.data} sub="Ready to trade" />
         <Stat label="Your positions" value={wallet.account ? mine : "—"} loading={!protocol.data && wallet.account} sub={wallet.account ? "Pools where you hold LP" : "Connect to see"} />

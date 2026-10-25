@@ -9,6 +9,7 @@ import FaucetPage from "./platform/pages/FaucetPage";
 import OverviewPage from "./platform/pages/OverviewPage";
 import PoolsPage from "./platform/pages/PoolsPage";
 import PortfolioPage from "./platform/pages/PortfolioPage";
+import PricesPage from "./platform/pages/PricesPage";
 import SwapPage from "./platform/pages/SwapPage";
 
 import { useHashRoute } from "./hooks/useHashRoute";
@@ -34,6 +35,7 @@ const PAGES = {
   pools: PoolsPage,
   earn: EarnPage,
   portfolio: PortfolioPage,
+  prices: PricesPage,
   faucet: FaucetPage,
   activity: ActivityPage,
   labs: LabsPage,

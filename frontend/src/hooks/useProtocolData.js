@@ -12,6 +12,9 @@ import {
   ETH_VAULT_ABI,
   ETH_VAULT_ADDRESS,
   MOCK_ERC20_ABI,
+  ORACLE_ADDRESS,
+  ORACLE_ETH,
+  PRICE_ORACLE_ABI,
   PUBLIC_RPC_URL,
   SIMPLE_AMM_ABI,
   STAKING_ADDRESS,
@@ -23,9 +26,11 @@ import {
   isDexConfigured,
   isErc4626Configured,
   isEthVaultConfigured,
+  isOracleConfigured,
 } from "../contracts/contractConfig";
 import { POOLS } from "../experiments/experiment5/pools";
 import { PAIR_KEYS } from "../experiments/experiment6/dex";
+import { toPriceEntry } from "../platform/pricing";
 import { TOKENS } from "../platform/registry";
 import { getProvider } from "./useWallet";
 
@@ -44,7 +49,7 @@ import { getProvider } from "./useWallet";
 const POLL_MS = 20_000;
 
 let publicProvider = null;
-const getPublicProvider = () => {
+export const getPublicProvider = () => {
   if (!publicProvider) {
     const network = Network.from(Number(TARGET_CHAIN_ID));
     publicProvider = new JsonRpcProvider(PUBLIC_RPC_URL, network, { staticNetwork: network });
@@ -180,6 +185,18 @@ export async function readSnapshot(provider, account) {
     dex = { ...dex, pairs: Object.fromEntries(pairEntries), allowances: Object.fromEntries(allowanceEntries) };
   }
 
+  /* ── USD prices from the PriceOracle ────────────────────────────── */
+  // Keyed by registry id, plus "ETH". tryGetPrice never reverts, so a token
+  // without a feed (vault and LP shares) simply reads as "noFeed".
+  let prices = {};
+  if (isOracleConfigured) {
+    const oracle = new Contract(ORACLE_ADDRESS, PRICE_ORACLE_ABI, provider);
+    const priceEntries = await Promise.all(
+      [{ id: "ETH", address: ORACLE_ETH }, ...TOKENS].map(async ({ id, address }) => [id, toPriceEntry(await safe(oracle.tryGetPrice(address, at)))])
+    );
+    prices = Object.fromEntries(priceEntries);
+  }
+
   return {
     account: account ?? null,
     blockNumber: block.number,
@@ -194,6 +211,8 @@ export async function readSnapshot(provider, account) {
     farm,
     staking,
     dex,
+    oracleConfigured: isOracleConfigured,
+    prices,
   };
 }
 

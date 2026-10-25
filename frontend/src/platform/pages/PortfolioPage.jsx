@@ -2,9 +2,10 @@ import { useState } from "react";
 
 import { EXPLORER_ADDRESS_BASE_URL } from "../../contracts/contractConfig";
 import { shortAddress } from "../../utils/format";
-import { fmtToken } from "../format";
+import { fmtToken, fmtUsd } from "../format";
 import { usePlatform } from "../usePlatform";
 import { derivePositions } from "../positions";
+import { positionUsd, sumUsd, usdValue } from "../pricing";
 import { TOKENS } from "../registry";
 import { ActionButton, Amount, Badge, Card, EmptyState, Icon, PageHeader, Skeleton, Stat, TokenIcon } from "../ui";
 
@@ -36,6 +37,14 @@ export default function PortfolioPage() {
   const wallets = data ? [{ ...ETH, balance: data.ethBalance }, ...TOKENS.map((t) => data.tokens[t.id])] : [];
   const shown = hideZero ? wallets.filter((t) => t.balance && t.balance > 0n) : wallets;
   const pending = positions.filter((p) => p.pending?.raw > 0n);
+  const priced = Boolean(data?.oracleConfigured);
+  const prices = data?.prices;
+  // Vault and LP shares (faucet: null) are already valued as positions, through what they redeem for.
+  const held = wallets.filter((t) => t.balance && t.balance > 0n && t.faucet !== null);
+  const netWorth = priced
+    ? sumUsd([...held.map((t) => usdValue(t.balance, t, prices)), ...positions.map((p) => positionUsd(p, prices))])
+    : null;
+  const pendingUsd = priced ? sumUsd(pending.map((p) => usdValue(p.pending.raw, p.pending.token, prices))) : null;
 
   return (
     <>
@@ -50,6 +59,14 @@ export default function PortfolioPage() {
         }
       />
       <div className="vw-stats-row">
+        {priced && (
+          <Stat
+            label="Net worth"
+            value={fmtUsd(netWorth)}
+            loading={!data}
+            sub={netWorth === null ? "Some holdings have no live price" : "Wallet + positions, at oracle prices"}
+          />
+        )}
         <Stat label="ETH balance" value={data ? `${fmtToken(data.ethBalance, 18)} ETH` : null} loading={!data} sub="For gas and the ETH vault" />
         <Stat label="Tokens held" value={data ? wallets.filter((t) => t.balance > 0n).length : null} loading={!data} sub={`of ${wallets.length} platform assets`} />
         <Stat label="Open positions" value={data ? positions.length : null} loading={!data} sub="Vaults, pools, farms" />
@@ -57,11 +74,11 @@ export default function PortfolioPage() {
           label="Pending rewards"
           value={data ? `${fmtToken(pending.reduce((sum, p) => sum + p.pending.raw, 0n), 18)} RWD` : null}
           loading={!data}
-          sub="Claim on the Earn page"
+          sub={pendingUsd !== null && pending.length ? `≈ ${fmtUsd(pendingUsd)} · claim on Earn` : "Claim on the Earn page"}
         />
       </div>
 
-      <Card title="Positions" subtitle="Valued in underlying tokens — USD pricing arrives with the oracle (Experiment 7)" padded={false}>
+      <Card title="Positions" subtitle={priced ? "Valued from the tokens each position redeems for, at oracle prices" : "Valued in underlying tokens"} padded={false}>
         {!data ? (
           <div className="vw-pad">
             <Skeleton height="56px" />
@@ -90,14 +107,22 @@ export default function PortfolioPage() {
                   </span>
                 </span>
                 <span role="cell" data-label="Holdings">
+                  {priced && <strong className="vw-block">{fmtUsd(positionUsd(p, prices))}</strong>}
                   {p.holdings.map((h) => (
-                    <span key={h.token.symbol} className="vw-block">
+                    <span key={h.token.symbol} className={`vw-block ${priced ? "vw-muted" : ""}`}>
                       <Amount raw={h.raw} token={h.token} />
                     </span>
                   ))}
                 </span>
                 <span role="cell" data-label="Pending reward">
-                  {p.pending ? <Amount raw={p.pending.raw} token={p.pending.token} /> : <span className="vw-muted">—</span>}
+                  {p.pending ? (
+                    <>
+                      <Amount raw={p.pending.raw} token={p.pending.token} />
+                      {priced && <small className="vw-block vw-muted">{fmtUsd(usdValue(p.pending.raw, p.pending.token, prices))}</small>}
+                    </>
+                  ) : (
+                    <span className="vw-muted">—</span>
+                  )}
                 </span>
                 <span role="cell" className="vw-td-go">
                   <Icon name="chevron" />
@@ -147,6 +172,7 @@ export default function PortfolioPage() {
                 </span>
                 <span role="cell" data-label="Balance" className="vw-num">
                   <Amount raw={t.balance} token={t} suffix={false} />
+                  {priced && t.balance > 0n && t.faucet !== null && <small className="vw-block vw-muted">{fmtUsd(usdValue(t.balance, t, prices))}</small>}
                 </span>
               </div>
             ))}

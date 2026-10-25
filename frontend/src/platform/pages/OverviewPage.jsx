@@ -1,6 +1,7 @@
-import { fmtToken } from "../format";
+import { fmtToken, fmtUsd } from "../format";
 import { usePlatform } from "../usePlatform";
 import { derivePositions } from "../positions";
+import { positionUsd, protocolTvl, sumUsd } from "../pricing";
 import { DEX_TOKEN_ID, PRODUCTS } from "../registry";
 import { Badge, Card, Icon, PageHeader, Skeleton, Stat, TokenIcon } from "../ui";
 
@@ -9,7 +10,7 @@ import { Badge, Card, Icon, PageHeader, Skeleton, Stat, TokenIcon } from "../ui"
  * market with its live liquidity, and the visitor's own positions at a glance.
  */
 
-const ETH = { symbol: "ETH", decimals: 18, hue: "#4a5785" };
+const ETH = { id: "ETH", symbol: "ETH", decimals: 18, hue: "#4a5785" };
 
 /** Liquidity + terms for one product row, from the snapshot. */
 function describe(product, data) {
@@ -49,6 +50,8 @@ export default function OverviewPage() {
   const live = PRODUCTS.filter((p) => p.configured).length;
   const activePairs = data ? Object.values(data.dex.pairs).filter((p) => p.address && p.reserveX > 0n).length + (data.amm.reserveA > 0n ? 1 : 0) : null;
   const pendingRewards = positions.filter((p) => p.pending?.raw > 0n);
+  const tvl = data?.oracleConfigured ? protocolTvl(data, DEX_TOKEN_ID) : null;
+  const myUsd = data?.oracleConfigured && positions.length ? sumUsd(positions.map((p) => positionUsd(p, data.prices))) : null;
 
   return (
     <>
@@ -67,6 +70,13 @@ export default function OverviewPage() {
         }
       />
       <div className="vw-stats-row">
+        {data?.oracleConfigured && (
+          <Stat
+            label="Total value locked"
+            value={fmtUsd(tvl.total)}
+            sub={tvl.complete ? "All products, at oracle prices" : "Excludes products without a live price"}
+          />
+        )}
         <Stat label="Live products" value={`${live} / ${PRODUCTS.length}`} sub="Deployed and readable" />
         <Stat label="Active pools" value={activePairs} loading={!data} sub="Pools with liquidity" />
         <Stat label="USDC vault" value={data ? `${fmtToken(data.vault4626.totalAssets, data.tokens.USDC?.decimals ?? 6)} USDC` : null} loading={!data} sub="Total deposits" />
@@ -76,7 +86,11 @@ export default function OverviewPage() {
       {wallet.account && (
         <Card
           title="Your account"
-          subtitle={positions.length ? `${positions.length} open position${positions.length > 1 ? "s" : ""}` : "No open positions yet"}
+          subtitle={
+            positions.length
+              ? `${positions.length} open position${positions.length > 1 ? "s" : ""}${myUsd !== null ? ` · ${fmtUsd(myUsd)}` : ""}`
+              : "No open positions yet"
+          }
           actions={
             <a className="vw-link" href="#/portfolio">
               Full portfolio <Icon name="chevron" size={12} />
@@ -154,7 +168,14 @@ export default function OverviewPage() {
                     <Skeleton width="80px" />
                   ) : (
                     <>
-                      {d.liquidity}
+                      {tvl && tvl.byProduct[product.id] !== undefined ? (
+                        <>
+                          <strong>{fmtUsd(tvl.byProduct[product.id])}</strong>
+                          <small className="vw-block vw-muted">{d.liquidity}</small>
+                        </>
+                      ) : (
+                        d.liquidity
+                      )}
                       {d.detail && <small className="vw-block vw-muted">{d.detail}</small>}
                     </>
                   )}

@@ -6,8 +6,8 @@ import { DEX_TOKEN_ID } from "./registry";
  * Every position the connected account holds across all products, derived
  * from one protocol snapshot. Shared by the Overview and Portfolio pages.
  *
- * Each position lists what it is worth in its underlying tokens — there is no
- * price oracle yet (that is Experiment 7), so nothing is converted to USD.
+ * Each position lists what it is worth in its underlying tokens; pricing.js
+ * turns those holdings into USD with the oracle's prices.
  *
  * @returns {{ id, product, name, route, kind, holdings: { token, raw }[], pending?: { token, raw } }[]}
  */
@@ -15,7 +15,7 @@ export function derivePositions(data) {
   if (!data?.account) return [];
   const t = data.tokens;
   const out = [];
-  const ETH = { symbol: "ETH", decimals: 18, hue: "#4a5785" };
+  const ETH = { id: "ETH", symbol: "ETH", decimals: 18, hue: "#4a5785" };
 
   if (data.ethVault.mine > 0n)
     out.push({ id: "ethVault", product: "ETH Savings Vault", kind: "Vault", route: "earn", holdings: [{ token: ETH, raw: data.ethVault.mine }] });

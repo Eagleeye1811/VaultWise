@@ -30,6 +30,7 @@ const ICON_PATHS = {
   chevron: "M9 6l6 6-6 6",
   shield: "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z",
   menu: "M4 6h16M4 12h16M4 18h16",
+  pulse: "M3 12h4l3-8 4 16 3-8h4",
 };
 
 export function Icon({ name, size = 18, className = "" }) {

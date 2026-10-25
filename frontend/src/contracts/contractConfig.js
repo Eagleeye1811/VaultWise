@@ -36,12 +36,14 @@
  *     VITE_DEX_TOKEN_A_ADDRESS=0x...Experiment 6 — DexMockERC20 "Token A" (DXA)
  *     VITE_DEX_TOKEN_B_ADDRESS=0x...Experiment 6 — DexMockERC20 "Token B" (DXB)
  *     VITE_DEX_TOKEN_C_ADDRESS=0x...Experiment 6 — DexMockERC20 "Token C" (DXC)
+ *     VITE_ORACLE_ADDRESS=0x...     PriceOracle — Chainlink-backed USD prices
  *
  * Deploy them with either:
  *     npx hardhat run scripts/deployExperiment3.js --network sepolia
  *     npx hardhat run scripts/deployExperiment4.js --network sepolia
  *     npx hardhat run scripts/deployExperiment5.js --network sepolia
  *     npx hardhat run scripts/deployExperiment6.js --network sepolia
+ *     npx hardhat run scripts/deployOracle.js --network sepolia
  * or by hand in Remix — see the README.
  *
  * Restart `npm run dev` after editing an env file; Vite only reads them at
@@ -57,6 +59,7 @@ import {
   ETH_VAULT_ABI,
   MOCK_ERC20_ABI,
   MOCK_USDC_ABI,
+  PRICE_ORACLE_ABI,
   SIMPLE_AMM_ABI,
   SIMPLE_STAKING_ABI,
   SIMPLE_YIELD_FARM_ABI,
@@ -203,6 +206,24 @@ export const isDexConfigured =
   DEX_FACTORY_ADDRESS !== "" &&
   DEX_ROUTER_ADDRESS !== "" &&
   Object.values(DEX_TOKEN_ADDRESSES).every((address) => address !== "");
+
+/* ------------------------------------------------------------------ *
+ * Price oracle
+ *
+ * PriceOracle maps each platform token to a Chainlink feed and returns
+ * validated 18-decimal USD prices. Without it the app still works; values
+ * are simply shown in tokens only.
+ * ------------------------------------------------------------------ */
+
+/** PriceOracle — the single source of USD prices. */
+export const ORACLE_ADDRESS = readAddress(import.meta.env.VITE_ORACLE_ADDRESS);
+
+/** The sentinel address under which PriceOracle prices native ETH (PriceOracle.ETH). */
+export const ORACLE_ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+
+export { PRICE_ORACLE_ABI };
+
+export const isOracleConfigured = ORACLE_ADDRESS !== "";
 
 /* ------------------------------------------------------------------ *
  * Experiment registry — drives the navbar switcher and the router

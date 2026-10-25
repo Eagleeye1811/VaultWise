@@ -70,6 +70,7 @@ export const NAV = [
   { route: "pools", label: "Pools", icon: "drop" },
   { route: "earn", label: "Earn", icon: "spark" },
   { route: "portfolio", label: "Portfolio", icon: "wallet" },
+  { route: "prices", label: "Prices", icon: "pulse" },
   { route: "faucet", label: "Faucet", icon: "faucet" },
   { route: "activity", label: "Activity", icon: "clock" },
   { route: "labs", label: "Labs", icon: "flask" },

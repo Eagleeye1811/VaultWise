@@ -5,7 +5,8 @@ import { applySlippage, findRoutes, getAmountsOut } from "../../experiments/expe
 import { TOKEN_KEYS } from "../../experiments/experiment6/dex";
 import { toExactString } from "../../utils/format";
 import { approveStep, chainDeadline, checkAmount, useTradeSettings, writeContract } from "../actions";
-import { fmtRate, fmtToken } from "../format";
+import { fmtPpm, fmtRate, fmtToken, fmtUsd } from "../format";
+import { oracleRate, poolDeviationPpm, usdValue, valueDeltaPpm } from "../pricing";
 import { usePlatform } from "../usePlatform";
 import { DEX_TOKEN_ID } from "../registry";
 import SettingsPopover from "../SettingsPopover";
@@ -14,7 +15,11 @@ import { ActionButton, AmountField, Badge, Card, CompositionBar, EmptyState, Ico
 /**
  * Swap — the DEX router (Experiment 6) with automatic best-route selection,
  * plus the classic no-fee TKA/TKB pool (Experiment 4) as a second venue.
+ * With the PriceOracle deployed, every quote is also checked against the
+ * Chainlink reference prices.
  */
+
+const WAD = 10n ** 18n;
 
 const KEY_OF_ID = Object.fromEntries(Object.entries(DEX_TOKEN_ID).map(([key, id]) => [id, key]));
 
@@ -43,6 +48,30 @@ function impactTone(ppm) {
   if (ppm < 10_000) return "good";
   if (ppm < 50_000) return "warn";
   return "bad";
+}
+
+/** A trade that returns more value than it costs is fine; losses grade like price impact. */
+const valueTone = (ppm) => (ppm === null ? "neutral" : ppm >= 0 ? "good" : impactTone(-ppm));
+
+/** Oracle price and how far the pool's spot price sits from it. */
+function OracleRows({ pool, prices }) {
+  const rate = oracleRate(pool.a, pool.b, prices);
+  if (rate === null) return null;
+  const deviation = poolDeviationPpm(pool.ra, pool.rb, pool.a, pool.b, prices);
+  return (
+    <>
+      <Row label="Oracle price">
+        1 {pool.a.symbol} = {fmtRate(rate, 18, WAD, 18)} {pool.b.symbol}
+      </Row>
+      {deviation !== null && (
+        <Row label="Pool vs oracle">
+          <Badge tone={impactTone(Math.abs(deviation))} title="How far the pool's spot price is from the Chainlink reference rate">
+            {fmtPpm(deviation)}
+          </Badge>
+        </Row>
+      )}
+    </>
+  );
 }
 
 export default function SwapPage() {
@@ -94,6 +123,13 @@ export default function SwapPage() {
     const out = classicQuote(amountIn, rIn, rOut);
     return { out, impact: routeImpactPpm(amountIn, out, [[rIn, rOut]]), path: null };
   }, [data, from, to, isDex, amountIn, classicAtoB, settings.slippageBps]);
+
+  /* ── the same trade at oracle prices ─────────────────────────────── */
+  const prices = data?.oracleConfigured ? data.prices : null;
+  const refRate = prices && from && to ? oracleRate(from, to, prices) : null;
+  const valueIn = prices && amountIn ? usdValue(amountIn, from, prices) : null;
+  const valueOut = prices && quote?.out ? usdValue(quote.out, to, prices) : null;
+  const valueDelta = valueDeltaPpm(valueIn, valueOut);
 
   const flip = () => {
     if (isDex) {
@@ -230,6 +266,19 @@ export default function SwapPage() {
                   <Row label="Rate">
                     1 {from.symbol} = {fmtRate(quote.out, to.decimals, amountIn, from.decimals)} {to.symbol}
                   </Row>
+                  {refRate !== null && (
+                    <Row label="Oracle rate">
+                      1 {from.symbol} = {fmtRate(refRate, 18, WAD, 18)} {to.symbol}
+                    </Row>
+                  )}
+                  {valueDelta !== null && (
+                    <Row label="Value at oracle prices">
+                      {fmtUsd(valueIn)} → {fmtUsd(valueOut)}{" "}
+                      <Badge tone={valueTone(valueDelta)} title="What you receive versus what you pay, both at Chainlink prices">
+                        {fmtPpm(valueDelta)}
+                      </Badge>
+                    </Row>
+                  )}
                   {isDex && (
                     <Row label="Route">
                       <span className="vw-route">
@@ -264,6 +313,12 @@ export default function SwapPage() {
                 <Notice tone="warn">The classic pool has no minimum-output check: if the price moves before your swap is mined, you receive the new price.</Notice>
               )}
               {quote?.impact > 50_000 && <Notice tone="error">This trade moves the price by more than 5%. Consider a smaller amount.</Notice>}
+              {valueDelta !== null && valueDelta < -50_000 && (
+                <Notice tone="warn">
+                  At Chainlink prices you receive {fmtPpm(valueDelta).slice(1)} less value than you pay. The pool&apos;s price is away from the
+                  reference price, or the trade is large for the pool.
+                </Notice>
+              )}
 
               <ActionButton label="Swap" flowKey="swap" onClick={swap} disabledReason={disabledReason} configured={configured} />
             </>
@@ -295,6 +350,7 @@ export default function SwapPage() {
                         <Row label="Reserves">
                           {fmtToken(pool.ra, pool.a.decimals)} {pool.a.symbol} · {fmtToken(pool.rb, pool.b.decimals)} {pool.b.symbol}
                         </Row>
+                        {prices && <OracleRows pool={pool} prices={prices} />}
                         <CompositionBar left={pool.ra} right={pool.rb} leftLabel={pool.a.symbol} rightLabel={pool.b.symbol} />
                       </>
                     )}

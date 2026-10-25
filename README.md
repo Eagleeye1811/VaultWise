@@ -1,6 +1,6 @@
 # VaultWise
 
-**An open DeFi platform for Ethereum: tokenized vaults, an AMM DEX, liquidity pools, yield farming and staking, all in one web app.**
+**An open DeFi platform for Ethereum: tokenized vaults, an AMM DEX, liquidity pools, yield farming and staking, priced in USD by Chainlink, all in one web app.**
 
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?logo=solidity)
 ![Hardhat](https://img.shields.io/badge/Hardhat-3-f0d43a)
@@ -41,7 +41,8 @@ VaultWise brings the core DeFi building blocks together in one non-custodial int
 - **Earn**: deposit into an ERC-4626 tokenized vault, an ETH vault, a yield farm or a staking pool.
 - **Swap**: trade through a Uniswap V2-style DEX with multi-hop routing, slippage protection and deadlines.
 - **Provide liquidity**: add liquidity to constant-product pools, receive LP tokens, and create new pairs without permission.
-- **Track**: see every position, balance and transaction in one place.
+- **Track**: see every position, balance and transaction in one place, valued in USD.
+- **Price**: every USD value comes from Chainlink Data Feeds, validated on-chain by the VaultWise `PriceOracle`.
 
 The app has no backend. It reads state from the chain, and your wallet signs every write.
 
@@ -49,11 +50,12 @@ The app has no backend. It reads state from the chain, and your wallet signs eve
 
 | Page          | Route         | What it does                                                                                     |
 | ------------- | ------------- | ------------------------------------------------------------------------------------------------ |
-| **Overview**  | `#/overview`  | Live liquidity, product terms and your open positions                                            |
-| **Swap**      | `#/swap`      | Best-route quoting (direct or multi-hop), configurable slippage tolerance and deadline           |
+| **Overview**  | `#/overview`  | Total value locked, live liquidity, product terms and your open positions                        |
+| **Swap**      | `#/swap`      | Best-route quoting (direct or multi-hop), slippage and deadline, and a check against oracle prices |
 | **Pools**     | `#/pools`     | Add or remove liquidity, view reserves, `k`, LP supply and your share; create new pairs          |
-| **Earn**      | `#/earn`      | ERC-4626 USDC vault, ETH vault, LP yield farm and token staking, with rewards ticking up live    |
-| **Portfolio** | `#/portfolio` | Wallet balances and every open position, valued in the underlying tokens                         |
+| **Earn**      | `#/earn`      | ERC-4626 USDC vault, ETH vault, LP yield farm and token staking, with live rewards and USD APR   |
+| **Portfolio** | `#/portfolio` | Net worth, wallet balances and every open position, valued in USD                                |
+| **Prices**    | `#/prices`    | Every USD price in use, its Chainlink feed, its age and its status                               |
 | **Faucet**    | `#/faucet`    | Mint test tokens (public for DEX tokens; owner-only for the others, plus reward-pool funding)    |
 | **Activity**  | `#/activity`  | Transactions sent from this browser, with Etherscan links                                        |
 | **Labs**      | `#/labs`      | Low-level developer consoles for each contract                                                   |
@@ -63,22 +65,23 @@ The app has no backend. It reads state from the chain, and your wallet signs eve
 - **Read-only access.** With no wallet connected, the app reads through a public Sepolia RPC, so visitors can still browse the markets. Data refreshes every 20 seconds and after every confirmed transaction.
 - **Guided writes.** Each action runs as a step-by-step flow (approve, then act). A toast follows each step until its receipt arrives. Approvals are for the exact amount, never unlimited.
 - **Readable errors.** Contract reverts and wallet errors are shown as plain-language messages.
+- **USD everywhere, never guessed.** With the oracle deployed, balances, positions, pool liquidity and TVL are shown in USD, farms and staking show an APR, and every swap is compared with the oracle rate. A stale or invalid price is never used; the value shows as "—" instead.
 
 ## Architecture
 
 ```text
-┌──────────────────────────────┐
-│   React 19 + Vite frontend   │
-│  (pages, flows, live state)  │
-└──────────────┬───────────────┘
-               │ ethers.js v6
-       ┌───────┴────────┐
-       ▼                ▼
-   MetaMask        Public RPC
-   (signing)       (read-only)
-       └───────┬────────┘
-               ▼
-┌──────────────────────────────┐
+┌───────────────────────────────┐
+│    React 19 + Vite frontend   │
+│   (pages, flows, live state)  │
+└───────────────┬───────────────┘
+                │ ethers.js v6
+        ┌───────┴────────┐
+        ▼                ▼
+    MetaMask        Public RPC
+    (signing)       (read-only)
+        └───────┬────────┘
+                ▼
+┌───────────────────────────────┐
 │       Ethereum (Sepolia)      │
 │                               │
 │  Vaults   ERC-4626 · ETH      │
@@ -86,12 +89,14 @@ The app has no backend. It reads state from the chain, and your wallet signs eve
 │           Router · LPFarm     │
 │  AMM      Constant-product    │
 │  Rewards  YieldFarm · Staking │
-└──────────────────────────────┘
+│  Oracle   PriceOracle         │ ──▶ Chainlink Data Feeds
+└───────────────────────────────┘
 ```
 
 | Layer            | Technology                                                        |
 | ---------------- | ----------------------------------------------------------------- |
 | Smart contracts  | Solidity 0.8.28, OpenZeppelin Contracts 5                         |
+| Price data       | Chainlink Data Feeds (`AggregatorV3Interface`)                    |
 | Tooling          | Hardhat 3 (compile, test, deploy, encrypted keystore)             |
 | Frontend         | React 19, Vite, plain CSS                                         |
 | Web3 library     | ethers.js 6                                                       |
@@ -114,6 +119,23 @@ The app has no backend. It reads state from the chain, and your wallet signs eve
 | **Rewards** | `SimpleYieldFarm` | Stake LP-style tokens to earn a reward token: `harvest`, `withdraw`, `exit` |
 | | `SimpleStaking` | Stake the protocol token to earn a reward token: `claimReward`, `unstake`, `exit` |
 | | `MockERC20` | 18-decimal test tokens with owner-only minting |
+| **Oracle** | `PriceOracle` | Maps each token to a Chainlink feed. Every read checks for a positive answer, a valid timestamp and a fresh round (a staleness window per feed), and prices are normalised to 18 decimals. Provides `getPrice`, `getValue` and a non-reverting `tryGetPrice` for dashboards. Ownership transfers in two steps. |
+
+### Price feeds
+
+The platform's tokens are testnet assets with no market of their own, so each one follows a real Sepolia Chainlink feed as its reference price. The mapping lives in [`scripts/lib/oracleConfig.js`](scripts/lib/oracleConfig.js) and is shown on the app's **Prices** page.
+
+| Token | Reference feed | Max age |
+| ----- | -------------- | ------- |
+| ETH, DXA, LPT | ETH / USD | 2 h |
+| DXB | BTC / USD | 2 h |
+| DXC | LINK / USD | 2 h |
+| RWD (both reward tokens) | SNX / USD | 2 h |
+| USDC, TKB | USDC / USD | 26 h |
+| TKA | DAI / USD | 26 h |
+| ABC | FORTH / USD | 26 h |
+
+Each window is about one update longer than the feed's heartbeat, as measured on Sepolia: hourly for the 2 h feeds, daily for the 26 h ones. Vault shares and LP tokens have no feed. They're valued from the tokens they redeem for.
 
 ### Key formulas
 
@@ -163,6 +185,7 @@ If you [deploy your own contracts](#deployment), replace the matching values. Ea
 | `VITE_LPT_ADDRESS`, `VITE_FARM_RWD_ADDRESS`, `VITE_YIELD_FARM_ADDRESS` | Yield farm |
 | `VITE_ABC_ADDRESS`, `VITE_STAKING_RWD_ADDRESS`, `VITE_STAKING_ADDRESS` | Staking pool |
 | `VITE_DEX_FACTORY_ADDRESS`, `VITE_DEX_ROUTER_ADDRESS`, `VITE_DEX_TOKEN_{A,B,C}_ADDRESS` | DEX |
+| `VITE_ORACLE_ADDRESS` | PriceOracle. *(Optional.)* Without it, values are shown in tokens only. |
 
 Restart `npm run dev` after changing these, because Vite reads env files only at startup. If a product's addresses are missing, the app shows a warning and disables its actions rather than calling the wrong contract.
 
@@ -176,7 +199,7 @@ From the **repository root**:
 ```bash
 npm install
 npm run compile      # compile all contracts
-npm test             # run the full test suite (265 tests)
+npm test             # run the full test suite (297 tests)
 npm run sync-abi     # regenerate frontend ABIs from compiled artifacts
 ```
 
@@ -188,6 +211,7 @@ Run `npm run sync-abi` after any contract change. The frontend's `abis.generated
 | ------- | ------- |
 | `npm run test:exp5` | Yield farm and staking tests |
 | `npm run test:exp6` | DEX tests (Factory, Pair, Router, LPFarm) |
+| `npm run test:oracle` | PriceOracle tests and the frontend's USD maths |
 | `npm run demo` | Run the full ERC-4626 vault lifecycle on a local chain |
 | `npm run demo:exp4` | Run the AMM pool lifecycle on a local chain |
 | `npm run demo:exp5` | Run the farming and staking lifecycle on a local chain |
@@ -222,6 +246,7 @@ Deploy each module (run `npm test` first):
 | AMM pool | `npm run deploy:exp4:sepolia` |
 | Yield farm and staking | `npm run deploy:exp5:sepolia` |
 | DEX | `npm run deploy:exp6:sepolia` |
+| Price oracle | `npm run deploy:oracle:sepolia` |
 
 Each script checks the deployed wiring before it reports success, writes a record to `deployments/`, and prints the `VITE_*` lines for your frontend env file. To dry-run on the in-process Hardhat chain, leave off `:sepolia` (for example, `npm run deploy:exp6`).
 
@@ -231,6 +256,7 @@ To check deployments against the frontend config (read-only, no key needed):
 npm run verify:sepolia   # ERC-4626 vault
 npm run verify:exp4      # AMM pool
 npm run verify:exp5      # Yield farm and staking
+npm run verify:oracle    # Price oracle (before deploying: checks every feed is live)
 ```
 
 ## Deployed contracts (Sepolia)
@@ -296,7 +322,8 @@ VaultWise/
 
 - The `SimpleAMM` pool has no swap fee and no on-chain `minAmountOut`. The app applies slippage limits on the client side.
 - Reward rates are fixed constants with no emission schedule.
-- There is no price oracle yet, so values aren't converted to USD.
+- The oracle owner chooses which Chainlink feed prices each token, and can change it. That is the oracle's only privileged power. The current mapping is public on the Prices page and on-chain (`feedOf`).
+- Reward APRs are computed from the fixed classroom emission rate and the reference prices, so they can be very high (thousands of percent).
 - Rebasing tokens aren't supported. Fee-on-transfer tokens aren't supported by the AMM or the DEX.
 
 **Secrets:** deployment keys live only in Hardhat's encrypted keystore. `.gitignore` excludes `.env*`, `*.key` and `*.pem`. Always use a dedicated testnet wallet.
@@ -306,7 +333,7 @@ To report a vulnerability, please contact the maintainer privately rather than o
 ## Roadmap
 
 - [ ] WalletConnect and multi-wallet support
-- [ ] Chainlink price feeds and USD valuation
+- [x] Chainlink price feeds and USD valuation
 - [ ] DAO governance and on-chain voting
 - [ ] Flash-loan resistance hardening
 - [ ] Multi-chain deployment (Polygon and other EVM testnets)
