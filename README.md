@@ -139,7 +139,7 @@ All integer divisions round in the protocol's favour.
 ```bash
 git clone https://github.com/Eagleeye1811/VaultWise.git
 cd VaultWise/frontend
-cp .env.example .env.local   # then fill in contract addresses (see Configuration)
+cp .env.example .env.local   # preconfigured for the live Sepolia deployment
 npm install
 npm run dev
 ```
@@ -150,7 +150,9 @@ The repository contains two separate npm projects: the **frontend** (`frontend/`
 
 ## Configuration
 
-The frontend reads contract addresses from Vite environment variables. Copy `frontend/.env.example` to `frontend/.env.local` and set:
+The frontend reads contract addresses from Vite environment variables. `frontend/.env.example` already points at the [live Sepolia deployment](#deployed-contracts-sepolia), so copying it to `.env.local` is all the setup most people need.
+
+If you [deploy your own contracts](#deployment), replace the matching values. Each deploy script prints the exact lines to paste. The variables are:
 
 | Variable | Contract |
 | -------- | -------- |
